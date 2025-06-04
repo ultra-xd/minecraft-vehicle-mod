@@ -1,0 +1,41 @@
+{
+	"schemaVersion": 1,
+	"id": "vehiclemod",
+	"version": "${version}",
+	"name": "vehiclemod",
+	"description": "Vehicle Mod that adds cars to the game that you can drive.",
+	"authors": [
+		"Gertrude",
+		"Carter"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "MIT",
+	"icon": "assets/vehiclemod/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.ultra.vehiclemod.VehicleMod"
+		],
+		"fabric-datagen": [
+			"net.ultra.vehiclemod.VehicleModDataGenerator"
+		],
+		"client": [
+			"net.ultra.vehiclemod.VehicleModClient"
+		]
+	},
+	"mixins": [
+		"vehiclemod.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.14",
+		"minecraft": "~1.21.5",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
