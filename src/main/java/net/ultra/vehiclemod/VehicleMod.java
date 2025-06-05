@@ -14,5 +14,7 @@ public class VehicleMod implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		HondaCivic.registerItem();
+		System.out.println("hello world");
 	}
+
 }
