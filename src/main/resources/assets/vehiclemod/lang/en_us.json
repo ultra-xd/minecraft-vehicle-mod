@@ -1,3 +1,8 @@
 {
-  "item.vehiclemod.civic_spawn": "Honda Civic"
+  "item.vehiclemod.civic_spawn": "Honda Civic",
+  "item.vehiclemod.bugatti_spawn": "Bugatti",
+  "item.vehiclemod.tesla_spawn": "Tesla",
+  "item.vehiclemod.rav4_spawn": "Rav4",
+  "item.vehiclemod.soul_spawn": "Kia Soul",
+  "item.vehiclemod.garbage_spawn": "Garbage Truck"
 }

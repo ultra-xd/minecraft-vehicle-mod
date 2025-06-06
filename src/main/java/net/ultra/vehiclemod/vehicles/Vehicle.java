@@ -21,7 +21,7 @@ public abstract class Vehicle {
         assert (ID != null);
 
         VehicleMod.LOGGER.info(String.format(
-            "Registering %s for %s", "civic_spawn", VehicleMod.MOD_ID
+            "Registering for %s", VehicleMod.MOD_ID
         ));
 
         Item item = Registry.register(
