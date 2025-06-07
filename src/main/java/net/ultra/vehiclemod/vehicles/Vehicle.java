@@ -27,10 +27,12 @@ public abstract class Vehicle {
         Item item = Registry.register(
             Registries.ITEM,
             Identifier.of(VehicleMod.MOD_ID, ID),
-            new Item(new Item.Settings().registryKey(RegistryKey.of(
-                    RegistryKeys.ITEM,
-                    Identifier.of(VehicleMod.MOD_ID, ID)
-            )))
+                new Item(new Item.Settings()
+                        .maxCount(1)
+                        .registryKey(RegistryKey.of(
+                        RegistryKeys.ITEM,
+                        Identifier.of(VehicleMod.MOD_ID, ID)
+                )))
         );
 
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS)
