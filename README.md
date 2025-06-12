@@ -40,7 +40,7 @@ Before installing this mod:
 - **Fuel Types**: Coal (default), Redstone (EVs), or both (Hybrids)
 - One fuel unit is consumed every 5 seconds while driving
 - Cars coast when not accelerating, decelerating naturally or with brakes
-- Crashes at high speed can cause explosions based on speed and car type
+- Crashes at high speed can cause explosions based on speed and net.ultra.vehiclemod.vehicles.car type
 - Water slows/brakes the vehicle; lava causes instant explosion
 
 ## 🚘 Vehicles

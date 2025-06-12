@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:glass",
+    "$": "minecraft:iron_ingot",
+    ".": "minecraft:diamond",
+    "%": "minecraft:dropper"
+  },
+  "pattern": [
+    "#$%",
+    "$.%",
+    "$$$"
+  ],
+  "result": {
+    "count": 1,
+    "id": "vehiclemod:civic_spawn"
+  }
+}

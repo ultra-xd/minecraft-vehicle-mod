@@ -2,7 +2,7 @@ package net.ultra.vehiclemod;
 
 import net.fabricmc.api.ModInitializer;
 
-import net.ultra.vehiclemod.vehicles.HondaCivic;
+import net.ultra.vehiclemod.vehicles.VehicleRegisterer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +13,8 @@ public class VehicleMod implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		HondaCivic.registerItem();
+		LOGGER.info("Initializing mod " + MOD_ID);
+
+		VehicleRegisterer.registerAll();
 	}
 }
