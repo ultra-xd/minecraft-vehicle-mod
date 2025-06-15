@@ -8,15 +8,27 @@ import net.minecraft.client.render.entity.state.EntityRenderState;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
-public abstract class VehicleRenderer<T extends Vehicle, S extends EntityRenderState> extends EntityRenderer<T, EntityRenderState> {
+public abstract class VehicleRenderer<T extends Vehicle> extends EntityRenderer<T, VehicleRenderState> {
     private static final float SHADOW_RADIUS = 0.75F;
 
-    protected VehicleRenderer(EntityRendererFactory.Context context) {
+    protected VehicleRenderer(
+        EntityRendererFactory.Context context
+    ) {
         super(context);
     }
 
     @Override
-    public EntityRenderState createRenderState() {
-        return new EntityRenderState();
+    public VehicleRenderState createRenderState() {
+        return new VehicleRenderState();
+    }
+
+    @Override
+    public void updateRenderState(
+        T vehicle,
+        VehicleRenderState renderState,
+        float f
+    ) {
+        super.updateRenderState(vehicle, renderState, f);
+        renderState.yaw = vehicle.getYaw();
     }
 }

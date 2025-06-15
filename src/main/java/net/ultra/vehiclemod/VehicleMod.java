@@ -15,6 +15,6 @@ public class VehicleMod implements ModInitializer {
 	public void onInitialize() {
 		LOGGER.info("Initializing mod " + MOD_ID);
 
-		VehicleRegisterer.registerAll();
+		VehicleRegisterer.serverRegisterAll();
 	}
 }

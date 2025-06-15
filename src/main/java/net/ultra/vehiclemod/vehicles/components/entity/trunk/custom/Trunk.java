@@ -1,6 +1,8 @@
-package net.ultra.vehiclemod.vehicles.components;
+package net.ultra.vehiclemod.vehicles.components.entity.trunk.custom;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityDimensions;
+import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
@@ -12,22 +14,28 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.world.World;
 import net.ultra.vehiclemod.vehicles.Vehicle;
+import net.ultra.vehiclemod.vehicles.components.entity.VehicleComponent;
 
-public class Trunk extends Entity implements Inventory {
+public class Trunk extends VehicleComponent implements Inventory {
 
     private final DefaultedList<ItemStack> INVENTORY;
-    private final Vehicle PARENT;
 
     public Trunk(
         EntityType<?> type,
-        World world,
+        Vehicle parent,
         int INVENTORY_WIDTH,
         int INVENTORY_HEIGHT,
-        Vehicle PARENT
+        double offsetX,
+        double offsetY,
+        double offsetZ
     ) {
-        super(type, world);
+        super(type, parent, offsetX, offsetY, offsetZ);
         INVENTORY = DefaultedList.ofSize(INVENTORY_WIDTH * INVENTORY_HEIGHT, ItemStack.EMPTY);
-        this.PARENT = PARENT;
+    }
+
+    public Trunk(EntityType<?> type, World world) {
+        super(type, world);
+        INVENTORY = null;
     }
 
     @Override
@@ -38,16 +46,6 @@ public class Trunk extends Entity implements Inventory {
     @Override
     public boolean damage(ServerWorld world, DamageSource source, float amount) {
         return false;
-    }
-
-    @Override
-    protected void readCustomDataFromNbt(NbtCompound nbt) {
-
-    }
-
-    @Override
-    protected void writeCustomDataToNbt(NbtCompound nbt) {
-
     }
 
     @Override
@@ -93,6 +91,15 @@ public class Trunk extends Entity implements Inventory {
     @Override
     public void clear() {
 
+    }
+
+    @Override
+    public boolean collidesWith(Entity other) {
+        return false;
+    }
+
+    public EntityDimensions getDimensions(EntityPose pose) {
+        return EntityDimensions.fixed(1.0f, 1.0f); // Example dimensions, adjust as needed
     }
 
     public class ScreenHandler {
