@@ -7,102 +7,76 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.screen.NamedScreenHandlerFactory;
+import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.world.World;
 import net.ultra.vehiclemod.vehicles.Vehicle;
 import net.ultra.vehiclemod.vehicles.components.entity.VehicleComponent;
+import net.ultra.vehiclemod.vehicles.components.entity.abstract_vehicle_inventory.VehicleInventory;
+import net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.custom.FuelTankScreenHandler;
+import org.jetbrains.annotations.Nullable;
 
-public class Trunk extends VehicleComponent implements Inventory {
+public class Trunk extends VehicleInventory {
 
-    private final DefaultedList<ItemStack> INVENTORY;
+    public static final int INVENTORY_WIDTH = 9;
+    public static final int INVENTORY_HEIGHT = 3;
+    public static final int INVENTORY_SIZE = INVENTORY_WIDTH * INVENTORY_HEIGHT;
+    public static final String ENTITY_ID = "vehicle_trunk";
+
+    public Trunk(EntityType<?> type, World world) {
+        super(type, world);
+    }
 
     public Trunk(
         EntityType<?> type,
         Vehicle parent,
-        int INVENTORY_WIDTH,
-        int INVENTORY_HEIGHT,
         double offsetX,
         double offsetY,
         double offsetZ
     ) {
         super(type, parent, offsetX, offsetY, offsetZ);
-        INVENTORY = DefaultedList.ofSize(INVENTORY_WIDTH * INVENTORY_HEIGHT, ItemStack.EMPTY);
-    }
-
-    public Trunk(EntityType<?> type, World world) {
-        super(type, world);
-        INVENTORY = null;
-    }
-
-    @Override
-    protected void initDataTracker(DataTracker.Builder builder) {
-
-    }
-
-    @Override
-    public boolean damage(ServerWorld world, DamageSource source, float amount) {
-        return false;
-    }
-
-    @Override
-    public int size() {
-        return 0;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return false;
-    }
-
-    @Override
-    public ItemStack getStack(int slot) {
-        return null;
-    }
-
-    @Override
-    public ItemStack removeStack(int slot, int amount) {
-        return null;
-    }
-
-    @Override
-    public ItemStack removeStack(int slot) {
-        return null;
     }
 
     @Override
     public void setStack(int slot, ItemStack stack) {
+        if (slot < 0 || slot >= INVENTORY.size()) return;
 
+        INVENTORY.set(slot, stack);
+        markDirty();
     }
 
     @Override
-    public void markDirty() {
-
-    }
-
-    @Override
-    public boolean canPlayerUse(PlayerEntity player) {
-        return false;
-    }
-
-    @Override
-    public void clear() {
-
-    }
-
-    @Override
-    public boolean collidesWith(Entity other) {
-        return false;
-    }
-
     public EntityDimensions getDimensions(EntityPose pose) {
-        return EntityDimensions.fixed(1.0f, 1.0f); // Example dimensions, adjust as needed
+        return EntityDimensions.fixed(1.0f, 1.0f);
     }
 
-    public class ScreenHandler {
+    @Override
+    public @Nullable ScreenHandler createMenu(int syncId, PlayerInventory playerInventory, PlayerEntity player) {
+        return new TrunkScreenHandler(
+            syncId,
+            this,
+            playerInventory
+        );
+    }
 
+    @Override
+    public int getInventoryWidth() {
+        return INVENTORY_WIDTH;
+    }
+
+    @Override
+    public int getInventoryHeight() {
+        return INVENTORY_HEIGHT;
     }
 }

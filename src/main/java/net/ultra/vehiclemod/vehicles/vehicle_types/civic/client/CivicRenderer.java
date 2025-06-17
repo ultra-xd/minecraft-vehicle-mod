@@ -37,7 +37,7 @@ public class CivicRenderer extends VehicleRenderer<Civic> {
         ms.push();
 
         ms.scale(MODEL_LENGTH, MODEL_HEIGHT, MODEL_WIDTH);
-        ms.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(entityRenderState.yaw));
+        ms.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(360f - entityRenderState.yaw));
         VertexConsumer vertexConsumer = vcp.getBuffer(RenderLayer.getEntityCutout(TEXTURE));
         MODEL.render(ms, vertexConsumer, light, OverlayTexture.DEFAULT_UV);
 

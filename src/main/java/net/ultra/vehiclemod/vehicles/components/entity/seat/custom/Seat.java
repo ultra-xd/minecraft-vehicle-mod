@@ -17,7 +17,7 @@ import net.ultra.vehiclemod.vehicles.components.entity.VehicleComponent;
 
 public class Seat extends VehicleComponent {
 
-    public static final String ENTITY_ID = "seat";
+    public static final String ENTITY_ID = "vehicle_seat";
     public static final double SEAT_WIDTH = 1d;
     public static final double SEAT_HEIGHT = 1d;
 
@@ -30,38 +30,11 @@ public class Seat extends VehicleComponent {
     }
 
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {
-
-    }
-//
-//    @Override
-//    public void readCustomDataFromNbt(NbtCompound nbt) {
-////        super.readCustomDataFromNbt(nbt);
-//    }
-
-//    @Override
-//    public void writeCustomDataToNbt(NbtCompound nbt) {
-//
-//    }
+    protected void initDataTracker(DataTracker.Builder builder) {}
 
     @Override
     public boolean damage(ServerWorld world, DamageSource source, float amount) {
         return false;
-    }
-
-    @Override
-    public boolean isInvisible() {
-        return false;
-    }
-
-    @Override
-    public boolean collidesWith(Entity other) {
-        return true;
-    }
-
-    @Override
-    public boolean canHit() {
-        return true;
     }
 
     @Override

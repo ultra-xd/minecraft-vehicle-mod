@@ -3,22 +3,32 @@ package net.ultra.vehiclemod.vehicles;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.render.entity.model.EntityModelLayer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
+import net.minecraft.inventory.SimpleInventory;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroups;
+import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.resource.featuretoggle.FeatureFlags;
+import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Identifier;
 import net.ultra.vehiclemod.VehicleMod;
 import net.ultra.vehiclemod.vehicles.components.entity.NoOpRenderer;
 import net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.custom.FuelTank;
+import net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.custom.FuelTankScreenHandler;
+import net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.custom.FuelTankInventoryScreen;
 import net.ultra.vehiclemod.vehicles.components.entity.seat.custom.Seat;
 import net.ultra.vehiclemod.vehicles.components.entity.trunk.custom.Trunk;
+import net.ultra.vehiclemod.vehicles.components.entity.trunk.custom.TrunkInventoryScreen;
+import net.ultra.vehiclemod.vehicles.components.entity.trunk.custom.TrunkScreenHandler;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.client.CivicModel;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.client.CivicRenderer;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.custom.Civic;
@@ -30,11 +40,17 @@ public final class VehicleRegisterer {
 
     private static final HashMap<String, EntityType<? extends Vehicle>> ENTITY_TYPES = new HashMap<>();
     private static final HashMap<String, VehicleItem<? extends Vehicle>> ITEMS = new HashMap<>();
-    private static final HashMap<String, EntityType<FuelTank>> FUEL_TANKS = new HashMap<>();
-    private static final HashMap<String, EntityType<Trunk>> TRUNKS = new HashMap<>();
 
     private static final Identifier SEAT_IDENTIFIER = Identifier.of(
         VehicleMod.MOD_ID, Seat.ENTITY_ID
+    );
+
+    private static final Identifier FUEL_TANK_IDENTIFIER = Identifier.of(
+        VehicleMod.MOD_ID, FuelTank.ENTITY_ID
+    );
+
+    private static final Identifier TRUNK_IDENTIFIER = Identifier.of(
+        VehicleMod.MOD_ID, Trunk.ENTITY_ID
     );
 
     public static final EntityType<Seat> SEAT_ENTITY_TYPE = EntityType.Builder.<Seat>create(
@@ -47,10 +63,51 @@ public final class VehicleRegisterer {
      .makeFireImmune()
      .build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, SEAT_IDENTIFIER));
 
+    public static final EntityType<FuelTank> FUEL_TANK_ENTITY_TYPE = EntityType.Builder.<FuelTank>create(
+        FuelTank::new,
+        SpawnGroup.MISC
+    ).dimensions(1f, 1f)
+     .disableSummon()
+     .trackingTickInterval(1)
+     .maxTrackingRange(8)
+     .makeFireImmune()
+     .build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, FUEL_TANK_IDENTIFIER));
+
+    public static final EntityType<Trunk> TRUNK_ENTITY_TYPE = EntityType.Builder.<Trunk>create(
+        Trunk::new,
+        SpawnGroup.MISC
+    ).dimensions(1f, 1f)
+     .disableSummon()
+     .trackingTickInterval(1)
+     .maxTrackingRange(8)
+     .makeFireImmune()
+     .build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, TRUNK_IDENTIFIER));
+
+    public static final ScreenHandlerType<FuelTankScreenHandler> FUEL_TANK_SCREEN_HANDLER_TYPE = new ScreenHandlerType<>(
+        (syncId, playerInventory) -> new FuelTankScreenHandler(
+            syncId,
+            new SimpleInventory(FuelTank.INVENTORY_SIZE),
+            playerInventory,
+            new Item[] {Items.COAL}
+        ),
+        FeatureFlags.VANILLA_FEATURES
+    );
+
+    public static final ScreenHandlerType<TrunkScreenHandler> TRUNK_SCREEN_HANDLER_TYPE = new ScreenHandlerType<>(
+        (syncId, playerInventory) -> new TrunkScreenHandler(
+            syncId,
+            new SimpleInventory(Trunk.INVENTORY_SIZE),
+            playerInventory
+        ),
+        FeatureFlags.VANILLA_FEATURES
+    );
+
     public static void serverRegisterAll() {
         registerSeat();
         registerFuelTanks();
         registerTrunks();
+        registerScreenHandlers();
+        registerScreens();
         registerVehicle(Civic.ENTITY_ID, Civic::new);
         registerItem(Civic.ITEM_ID, Civic.ENTITY_ID, Civic::new);
     }
@@ -133,48 +190,10 @@ public final class VehicleRegisterer {
             EntityModelLayerRegistry.TexturedModelDataProvider provider
     ) {
         VehicleMod.LOGGER.info(
-                "Registering {} model for {}", model.name(), VehicleMod.MOD_ID
+            "Registering {} model for {}", model.name(), VehicleMod.MOD_ID
         );
 
         EntityModelLayerRegistry.registerModelLayer(model, provider);
-    }
-
-    private static void registerFuelTank(String ID) {
-        Identifier identifier = Identifier.of(VehicleMod.MOD_ID, ID);
-
-        EntityType<FuelTank> tankEntityType = EntityType.Builder.<FuelTank>create(
-                        FuelTank::new,
-                        SpawnGroup.MISC
-                ).dimensions(1f, 1f)
-                .disableSummon()
-                .build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, identifier));
-
-        Registry.register(
-                Registries.ENTITY_TYPE,
-                identifier,
-                tankEntityType
-        );
-
-        FUEL_TANKS.put(ID, tankEntityType);
-    }
-
-    private static void registerTrunk(String ID) {
-        Identifier identifier = Identifier.of(VehicleMod.MOD_ID, ID);
-
-        EntityType<Trunk> trunkEntityType = EntityType.Builder.<Trunk>create(
-                        Trunk::new,
-                        SpawnGroup.MISC
-                ).dimensions(1f, 1f)
-                .disableSummon()
-                .build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, identifier));
-
-        Registry.register(
-                Registries.ENTITY_TYPE,
-                identifier,
-                trunkEntityType
-        );
-
-        TRUNKS.put(ID, trunkEntityType);
     }
 
     private static void registerSeat() {
@@ -182,11 +201,11 @@ public final class VehicleRegisterer {
     }
 
     private static void registerFuelTanks() {
-        registerFuelTank(Civic.FUEL_TANK_ID);
+        Registry.register(Registries.ENTITY_TYPE, FUEL_TANK_IDENTIFIER, FUEL_TANK_ENTITY_TYPE);
     }
 
     private static void registerTrunks() {
-        registerTrunk(Civic.TRUNK_ID);
+        Registry.register(Registries.ENTITY_TYPE, TRUNK_IDENTIFIER, TRUNK_ENTITY_TYPE);
     }
 
     private static void registerComponentRenderers() {
@@ -195,27 +214,41 @@ public final class VehicleRegisterer {
             NoOpRenderer<Seat>::new
         );
 
-        for (String ID: FUEL_TANKS.keySet()) {
-            registerRenderer(
-                FUEL_TANKS.get(ID),
-                NoOpRenderer<FuelTank>::new
-            );
-        }
+        registerRenderer(
+            FUEL_TANK_ENTITY_TYPE,
+            NoOpRenderer<FuelTank>::new
+        );
 
-        for (String ID: TRUNKS.keySet()) {
-            registerRenderer(
-                TRUNKS.get(ID),
-                NoOpRenderer<Trunk>::new
-            );
-        }
+        registerRenderer(
+            TRUNK_ENTITY_TYPE,
+            NoOpRenderer<Trunk>::new
+        );
     }
 
-    public static EntityType<FuelTank> getFuelTankType(String ID) {
-        return FUEL_TANKS.get(ID);
+    private static void registerScreenHandlers() {
+        Registry.register(
+            Registries.SCREEN_HANDLER,
+            FuelTank.ENTITY_ID,
+            FUEL_TANK_SCREEN_HANDLER_TYPE
+        );
+
+        Registry.register(
+            Registries.SCREEN_HANDLER,
+            Trunk.ENTITY_ID,
+            TRUNK_SCREEN_HANDLER_TYPE
+        );
     }
 
-    public static EntityType<Trunk> getTrunkType(String ID) {
-        return TRUNKS.get(ID);
+    private static void registerScreens() {
+        HandledScreens.register(
+            FUEL_TANK_SCREEN_HANDLER_TYPE,
+            FuelTankInventoryScreen::new
+        );
+
+        HandledScreens.register(
+            TRUNK_SCREEN_HANDLER_TYPE,
+            TrunkInventoryScreen::new
+        );
     }
 
     public static <T extends Vehicle> EntityType<T> getVehicleType(String ID) {

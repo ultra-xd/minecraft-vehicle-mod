@@ -75,19 +75,40 @@ public abstract class VehicleComponent extends Entity {
                     parent = vehicle;
                 }
             }
-
-            updatePosition();
-
         }
     }
 
-    protected void updatePosition() {
+    public void updatePosition() {
         if (parent == null || parent.isRemoved()) return;
 
-        Vec3d newPos = parent.getPos().add(OFFSET);
+        Vec3d parentPos = parent.getPos();
+        double parentYaw = Math.toRadians(parent.getYaw());
+
+        // Use rotation matrix to calculate new position based on parent's yaw
+        Vec3d newPos = new Vec3d(
+                OFFSET.getX() * Math.cos(parentYaw) - OFFSET.getZ() * Math.sin(parentYaw) + parentPos.getX(),
+                OFFSET.getY() + parent.getY(),
+                OFFSET.getX() * Math.sin(parentYaw) + OFFSET.getZ() * Math.cos(parentYaw) + parentPos.getZ()
+        );
+
         setPos(newPos.getX(), newPos.getY(), newPos.getZ());
         setBoundingBox(getDimensions(getPose()).getBoxAt(newPos));
     }
 
     public abstract EntityDimensions getDimensions(EntityPose pose);
+
+    @Override
+    public boolean isInvisible() {
+        return false;
+    }
+
+    @Override
+    public boolean collidesWith(Entity other) {
+        return true;
+    }
+
+    @Override
+    public boolean canHit() {
+        return true;
+    }
 }
