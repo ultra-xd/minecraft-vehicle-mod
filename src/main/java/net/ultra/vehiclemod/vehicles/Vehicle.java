@@ -230,7 +230,7 @@ public abstract class Vehicle extends Entity {
 
             noControl = true;
 
-            if (SEATS.isEmpty()) {
+            if (!SEATS.isEmpty()) {
                 Seat driver = SEATS.getFirst();
                 if (driver != null) {
                     if (driver.hasPassengers() && driver.getFirstPassenger() instanceof ServerPlayerEntity player) {
