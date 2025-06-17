@@ -1,4 +1,4 @@
-package net.ultra.vehiclemod.vehicles.components.entity.trunk.custom;
+package net.ultra.vehiclemod.vehicles.components.entity.trunk;
 
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -42,8 +42,6 @@ public class TrunkScreenHandler extends ScreenHandler {
             }
         }
     }
-
-
 
     @Override
     public ItemStack quickMove(PlayerEntity player, int slotNumber) {

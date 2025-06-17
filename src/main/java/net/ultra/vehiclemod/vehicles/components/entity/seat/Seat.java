@@ -1,10 +1,9 @@
-package net.ultra.vehiclemod.vehicles.components.entity.seat.custom;
+package net.ultra.vehiclemod.vehicles.components.entity.seat;
 
 import net.minecraft.entity.*;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;

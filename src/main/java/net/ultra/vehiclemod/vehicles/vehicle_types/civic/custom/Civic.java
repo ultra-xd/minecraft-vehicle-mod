@@ -6,8 +6,8 @@ import net.minecraft.item.Items;
 import net.minecraft.world.World;
 import net.ultra.vehiclemod.vehicles.Vehicle;
 import net.ultra.vehiclemod.vehicles.VehicleRegisterer;
-import net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.custom.FuelTank;
-import net.ultra.vehiclemod.vehicles.components.entity.trunk.custom.Trunk;
+import net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.FuelTank;
+import net.ultra.vehiclemod.vehicles.components.entity.trunk.Trunk;
 
 public class Civic extends Vehicle {
     public static final String ITEM_ID = "civic_spawn";
@@ -17,8 +17,8 @@ public class Civic extends Vehicle {
         super(
             type,
             world,
-            2,
-            1,
+            30,
+            10,
             30,
             5
         );
@@ -51,6 +51,6 @@ public class Civic extends Vehicle {
 
     @Override
     protected float getExplosionLookForwardDistance() {
-        return 3f;
+        return 2.2f;
     }
 }

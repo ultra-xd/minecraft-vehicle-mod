@@ -1,4 +1,4 @@
-package net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.custom;
+package net.ultra.vehiclemod.vehicles.components.entity.fuel_tank;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;

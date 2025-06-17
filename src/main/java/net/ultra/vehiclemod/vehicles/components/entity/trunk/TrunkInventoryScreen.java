@@ -1,4 +1,4 @@
-package net.ultra.vehiclemod.vehicles.components.entity.trunk.custom;
+package net.ultra.vehiclemod.vehicles.components.entity.trunk;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -7,7 +7,6 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.ultra.vehiclemod.VehicleMod;
-import net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.custom.FuelTankScreenHandler;
 
 public class TrunkInventoryScreen extends HandledScreen<TrunkScreenHandler> {
     private static final Identifier TEXTURE = Identifier.of(
