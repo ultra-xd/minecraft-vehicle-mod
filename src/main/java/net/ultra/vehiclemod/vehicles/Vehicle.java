@@ -2,6 +2,7 @@ package net.ultra.vehiclemod.vehicles;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.MovementType;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
@@ -19,10 +20,9 @@ import net.ultra.vehiclemod.vehicles.components.entity.seat.Seat;
 import net.ultra.vehiclemod.vehicles.components.entity.trunk.Trunk;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-import static com.ibm.icu.text.PluralRules.Operand.i;
 
 /**
  *
@@ -35,15 +35,20 @@ public abstract class Vehicle extends Entity {
     protected double speed = 0;
     public final double BRAKE_POWER;
     private static final double COASTING_PROPORTIONALITY = 0.2;
-    public final double MAX_EXPLOSION_POWER;
     protected final double ACCELERATION_TICKS;
     private static final double GRAVITY_ACCELERATION_PER_TICK = -0.08; // this is the default gravity acceleration in Minecraft
+    protected static final int DEFAULT_ACCELERATION_TICKS = 100; // how long it takes for vehicle to reach max speed
     private boolean noControl = true;
 
+    // Explosion properties
+    public final double MAX_EXPLOSION_POWER;
+    private static final double EXPLOSION_PROPORTIONALITY = 0.25;
+
+    // Fuel properties
     protected final double FUEL_CONSUMPTION_RATE;
     protected double fuelTicks = 0;
 
-    protected static final int DEFAULT_ACCELERATION_TICKS = 100;
+    protected static final float DAMAGE_RATE = 1.0f;
 
     protected final ArrayList<Seat> SEATS = new ArrayList<>();
     protected final ArrayList<UUID> SEATS_UUID = new ArrayList<>();
@@ -63,7 +68,7 @@ public abstract class Vehicle extends Entity {
     ) {
         super(type, world);
 
-        this.MAX_SPEED = MAX_SPEED / TPS;
+        this.MAX_SPEED = MAX_SPEED / TPS; // blocks per tick
         this.BRAKE_POWER = BRAKE_POWER / Math.pow(TPS, 2);
         this.MAX_EXPLOSION_POWER = MAX_EXPLOSION_POWER;
         this.FUEL_CONSUMPTION_RATE = FUEL_CONSUMPTION_RATE * TPS;
@@ -89,7 +94,8 @@ public abstract class Vehicle extends Entity {
     }
 
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {}
+    protected void initDataTracker(DataTracker.Builder builder) {
+    }
 
     @Override
     public boolean damage(ServerWorld world, DamageSource source, float amount) {
@@ -138,9 +144,10 @@ public abstract class Vehicle extends Entity {
 
     @Override
     protected void writeCustomDataToNbt(NbtCompound nbt) {
-        if (!SEATS.isEmpty()) {
-            for (int i = 0; i < SEATS.size(); i++) {
-                Seat seat = SEATS.get(i);
+        for (int i = 0; i < SEATS.size(); i++) {
+            Seat seat = SEATS.get(i);
+
+            if (seat != null) {
                 UUID uuid = seat.getUuid();
                 nbt.putLong("seatMost" + i, uuid.getMostSignificantBits());
                 nbt.putLong("seatLeast" + i, uuid.getLeastSignificantBits());
@@ -175,26 +182,70 @@ public abstract class Vehicle extends Entity {
                 loadComponents();
             }
 
+            // Handle dealing damage to living entities
+            List<Entity> collidedEntities = getCollidingLivingEntities();
+            for (Entity entity : collidedEntities) {
+                if (entity instanceof LivingEntity livingEntity) {
+                    if (Math.abs(speed) > 0.15f) {
+                        float damage = (float) (DAMAGE_RATE * (Math.abs(speed) * TPS));
+                        Vec3d direction = getVelocity().normalize();
+
+                        /*
+                        * Living entity must take the negative of the velocity since
+                        * the inputs calculate the direction vector from the entity
+                        * to the damage source, but we want the knockback in the
+                        * direction of the velocity vector.
+                        */
+                        livingEntity.takeKnockback(
+                            Math.abs(speed),
+                            -direction.getX(),
+                            -direction.getZ()
+                        );
+
+                        livingEntity.damage(
+                            (ServerWorld) getWorld(),
+                            getWorld().getDamageSources().outOfWorld(),
+                            damage
+                        );
+                    }
+                }
+            }
+
+            // Handle explosions with other vehicles
+            List<Entity> collidedVehicles = getCollidingVehicles();
+            for (Entity entity: collidedVehicles) {
+                if (entity instanceof Vehicle vehicle) {
+                    double relativeSpeed = getVelocity().subtract(vehicle.getVelocity()).length();
+
+                    if (
+                        relativeSpeed > MAX_SPEED * EXPLOSION_PROPORTIONALITY ||
+                        relativeSpeed > vehicle.MAX_SPEED * EXPLOSION_PROPORTIONALITY
+                    ) {
+                        explodeProportionalToSpeed();
+                        vehicle.explodeProportionalToSpeed();
+                        return;
+                    }
+                }
+            }
+
             noControl = true;
 
-            Seat driver = SEATS.getFirst();
-            if (driver != null) {;
-                if (driver.hasPassengers() && driver.getFirstPassenger() instanceof ServerPlayerEntity player) {
-                    handlePlayerInput(player);
+            if (SEATS.isEmpty()) {
+                Seat driver = SEATS.getFirst();
+                if (driver != null) {
+                    if (driver.hasPassengers() && driver.getFirstPassenger() instanceof ServerPlayerEntity player) {
+                        handlePlayerInput(player);
 
-                    fuelTicks++;
-                    if (fuelTicks >= FUEL_CONSUMPTION_RATE) {
-                        fuelTicks = 0;
-                        tank.consumeFuel();
-                    }
-                } else {
-                    noControl = true;
-                }
+                        fuelTicks++;
+                        if (fuelTicks >= FUEL_CONSUMPTION_RATE) {
+                            fuelTicks = 0;
+                            tank.consumeFuel();
+                        }
+                    } else noControl = true;
 
+                } else noControl = true;
 
-            } else {
-                noControl = true;
-            }
+            } else noControl = true;
 
             // Accelerate to the ground if not on the ground
             if (!isOnGround()) {
@@ -206,16 +257,16 @@ public abstract class Vehicle extends Entity {
             if (noControl) adjustVelocityWhileCoasting();
 
             if (exceedsMaxClimbHeight()) {
-                explode((float) (Math.abs(speed) / MAX_SPEED * MAX_EXPLOSION_POWER));
+                explodeProportionalToSpeed();
                 return;
             }
 
             double yaw = Math.toRadians(getYaw());
 
             setVelocity(new Vec3d(
-                -Math.sin(yaw) * speed,
-                getVelocity().getY(),
-                Math.cos(yaw) * speed
+                    -Math.sin(yaw) * speed,
+                    getVelocity().getY(),
+                    Math.cos(yaw) * speed
             ));
         }
 
@@ -223,7 +274,7 @@ public abstract class Vehicle extends Entity {
         move(MovementType.SELF, getVelocity());
 
         // Update position of seats on server and client
-        for (Seat seat: SEATS) {
+        for (Seat seat : SEATS) {
             if (seat != null && !seat.isRemoved()) seat.updatePosition();
         }
 
@@ -254,7 +305,7 @@ public abstract class Vehicle extends Entity {
         }
 
         double yaw = Math.toRadians(getYaw());
-        double changeInYaw = (speed == 0) ? 0: 0.05;
+        double changeInYaw = (speed == 0) ? 0 : 0.05;
 
         if (input.left()) yaw -= changeInYaw;
         if (input.right()) yaw += changeInYaw;
@@ -277,7 +328,9 @@ public abstract class Vehicle extends Entity {
      * This method should be implemented by subclasses to define how many and where the seats are placed.
      */
     protected abstract void createSeats();
+
     protected abstract void createFuelTank();
+
     protected abstract void createTrunk();
 
     /**
@@ -286,11 +339,12 @@ public abstract class Vehicle extends Entity {
      * Subclasses should use this method to add a seat instead of
      * directly creating a seat object to ensure that the seat's NBT
      * data is saved.
+     *
      * @param offsetX The offset of the seat in the X direction.
      * @param offsetY The offset of the seat in the Y direction.
      * @param offsetZ The offset of the seat in the Z direction.
-     * @param seatId The ith seat added to the vehicle, zero-indexed. Seat IDs
-     *               should always be assigned in ascending order.
+     * @param seatId  The ith seat added to the vehicle, zero-indexed. Seat IDs
+     *                should always be assigned in ascending order.
      */
     protected void addSeat(double offsetX, double offsetY, double offsetZ, int seatId) {
         Seat seat = new Seat(
@@ -334,7 +388,7 @@ public abstract class Vehicle extends Entity {
     public void remove(RemovalReason reason) {
         super.remove(reason);
 
-        for (Seat seat: SEATS) {
+        for (Seat seat : SEATS) {
             if (seat != null && !seat.isRemoved()) {
                 seat.remove(RemovalReason.DISCARDED);
             }
@@ -353,31 +407,31 @@ public abstract class Vehicle extends Entity {
         World world = getWorld();
 
         if (!fromSavedData) {
-            for (Seat seat: SEATS) world.spawnEntity(seat);
+            for (Seat seat : SEATS) world.spawnEntity(seat);
             world.spawnEntity(tank);
             world.spawnEntity(trunk);
         } else {
             SEATS.clear();
 
-            for (UUID uuid: SEATS_UUID) {
-                for (Seat other: world.getEntitiesByClass(
-                    Seat.class,
-                    getBoundingBox().expand(16),
-                    e -> true
+            for (UUID uuid : SEATS_UUID) {
+                for (Seat other : world.getEntitiesByClass(
+                        Seat.class,
+                        getBoundingBox().expand(16),
+                        e -> true
                 )) {
                     if (other.getUuid().equals(uuid)) SEATS.add(other);
                 }
             }
 
-            for (FuelTank other: world.getEntitiesByClass(
-                FuelTank.class,
-                getBoundingBox().expand(16),
-                e -> true
+            for (FuelTank other : world.getEntitiesByClass(
+                    FuelTank.class,
+                    getBoundingBox().expand(16),
+                    e -> true
             )) {
                 if (other.getUuid().equals(tankUuid)) tank = other;
             }
 
-            for (Trunk other: world.getEntitiesByClass(
+            for (Trunk other : world.getEntitiesByClass(
                     Trunk.class,
                     getBoundingBox().expand(16),
                     e -> true
@@ -409,23 +463,52 @@ public abstract class Vehicle extends Entity {
         }
     }
 
+    public void explodeProportionalToSpeed() {
+        explode((float) (Math.abs(speed) / MAX_SPEED * MAX_EXPLOSION_POWER));
+    }
+
     private boolean exceedsMaxClimbHeight() {
-        if (Math.abs(speed) <= MAX_SPEED / 4) return false;
+        if (Math.abs(speed) <= MAX_SPEED * EXPLOSION_PROPORTIONALITY) return false;
 
         Vec3d direction = getVelocity().normalize().multiply(getExplosionLookForwardDistance());
 
         Box futureBox = getBoundingBox().offset(direction.getX(), 1.5, direction.getZ());
 
-        for (VoxelShape shape: getWorld().getBlockCollisions(this, futureBox)) {
+        for (VoxelShape shape : getWorld().getBlockCollisions(this, futureBox)) {
             if (!shape.isEmpty()) return true;
         }
 
         return false;
     }
 
+    private List<Entity> getCollidingLivingEntities() {
+        return getWorld().getOtherEntities(
+            this,
+            getBoundingBox(),
+            entity -> {
+                for (Seat seat : SEATS) {
+                    if (seat != null && seat.getFirstPassenger() == entity) {
+                        return false;
+                    }
+                }
+
+                return entity instanceof LivingEntity;
+            }
+        );
+    }
+
+    private List<Entity> getCollidingVehicles() {
+        return getWorld().getOtherEntities(
+            this,
+            getBoundingBox(),
+            entity -> entity instanceof Vehicle
+        );
+    }
+
     /**
      * Vehicles explode if they encounter a wall in front of them larger than 2 blocks.
      * This method returns the distance the vehicle looks forward to check for walls.
+     *
      * @return The distance the vehicle looks forward to check for walls.
      */
     protected abstract float getExplosionLookForwardDistance();

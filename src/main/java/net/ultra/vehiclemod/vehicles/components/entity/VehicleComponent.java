@@ -129,8 +129,4 @@ public abstract class VehicleComponent extends Entity {
     public boolean canHit() {
         return true;
     }
-
-    public Vehicle getParent() {
-        return parent;
-    }
 }
