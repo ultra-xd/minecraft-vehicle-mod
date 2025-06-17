@@ -5,11 +5,8 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.MovementType;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
+import net.minecraft.item.Item;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.registry.*;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.PlayerInput;
@@ -22,6 +19,10 @@ import net.ultra.vehiclemod.vehicles.components.entity.seat.Seat;
 import net.ultra.vehiclemod.vehicles.components.entity.trunk.Trunk;
 
 import java.util.ArrayList;
+import java.util.Optional;
+import java.util.UUID;
+
+import static com.ibm.icu.text.PluralRules.Operand.i;
 
 /**
  *
@@ -45,8 +46,12 @@ public abstract class Vehicle extends Entity {
     protected static final int DEFAULT_ACCELERATION_TICKS = 100;
 
     protected final ArrayList<Seat> SEATS = new ArrayList<>();
+    protected final ArrayList<UUID> SEATS_UUID = new ArrayList<>();
     protected FuelTank tank = null;
+    protected UUID tankUuid = null;
     protected Trunk trunk = null;
+    protected UUID trunkUuid = null;
+    private boolean fromSavedData = false;
 
     protected Vehicle(
         EntityType<? extends Vehicle> type,
@@ -63,8 +68,6 @@ public abstract class Vehicle extends Entity {
         this.MAX_EXPLOSION_POWER = MAX_EXPLOSION_POWER;
         this.FUEL_CONSUMPTION_RATE = FUEL_CONSUMPTION_RATE * TPS;
         ACCELERATION_TICKS = DEFAULT_ACCELERATION_TICKS;
-
-        createSeats();
     }
 
     protected Vehicle(
@@ -83,8 +86,6 @@ public abstract class Vehicle extends Entity {
         this.MAX_EXPLOSION_POWER = MAX_EXPLOSION_POWER;
         this.ACCELERATION_TICKS = ACCELERATION_TICKS;
         this.FUEL_CONSUMPTION_RATE = FUEL_CONSUMPTION_RATE * TPS;
-
-        createSeats();
     }
 
     @Override
@@ -97,18 +98,66 @@ public abstract class Vehicle extends Entity {
 
     @Override
     protected void readCustomDataFromNbt(NbtCompound nbt) {
-        RegistryOps<NbtElement> registryOps = this.getRegistryManager().getOps(NbtOps.INSTANCE);
+        fromSavedData = true;
+        SEATS_UUID.clear();
+        SEATS.clear();
 
-        nbt.putDouble("max_speed", MAX_SPEED);
-        nbt.putDouble("brake_power", BRAKE_POWER);
-        nbt.putDouble("max_explosion_power", MAX_EXPLOSION_POWER);
+        int i = 0;
+        while (true) {
+            if (nbt.contains("seatMost" + i) && nbt.contains("seatLeast" + i)) {
+                Optional<Long> most = nbt.getLong("seatMost" + i);
+                Optional<Long> least = nbt.getLong("seatLeast" + i);
+
+                if (most.isPresent() && least.isPresent()) {
+                    SEATS_UUID.add(new UUID(most.get(), least.get()));
+                    SEATS.add(null);
+                }
+
+                i++;
+            } else break;
+        }
+
+        if (nbt.contains("tankMost") && nbt.contains("tankLeast")) {
+            Optional<Long> most = nbt.getLong("tankMost");
+            Optional<Long> least = nbt.getLong("tankLeast");
+
+            if (most.isPresent() && least.isPresent()) {
+                tankUuid = new UUID(most.get(), least.get());
+            }
+        }
+
+        if (nbt.contains("trunkMost") && nbt.contains("trunkLeast")) {
+            Optional<Long> most = nbt.getLong("trunkMost");
+            Optional<Long> least = nbt.getLong("trunkLeast");
+
+            if (most.isPresent() && least.isPresent()) {
+                trunkUuid = new UUID(most.get(), least.get());
+            }
+        }
     }
 
     @Override
     protected void writeCustomDataToNbt(NbtCompound nbt) {
-        RegistryOps<NbtElement> registryOps = this.getRegistryManager().getOps(NbtOps.INSTANCE);
+        if (!SEATS.isEmpty()) {
+            for (int i = 0; i < SEATS.size(); i++) {
+                Seat seat = SEATS.get(i);
+                UUID uuid = seat.getUuid();
+                nbt.putLong("seatMost" + i, uuid.getMostSignificantBits());
+                nbt.putLong("seatLeast" + i, uuid.getLeastSignificantBits());
+            }
+        }
 
+        if (tank != null && !tank.isRemoved()) {
+            UUID uuid = tank.getUuid();
+            nbt.putLong("tankMost", uuid.getMostSignificantBits());
+            nbt.putLong("tankLeast", uuid.getLeastSignificantBits());
+        }
 
+        if (trunk != null && !trunk.isRemoved()) {
+            UUID uuid = trunk.getUuid();
+            nbt.putLong("trunkMost", uuid.getMostSignificantBits());
+            nbt.putLong("trunkLeast", uuid.getLeastSignificantBits());
+        }
     }
 
     @Override
@@ -116,14 +165,20 @@ public abstract class Vehicle extends Entity {
         super.tick();
 
         if (!getWorld().isClient) {
-            noControl = true;
             if (age == 1) {
-                spawnComponents();
+                if (!fromSavedData) {
+                    createSeats();
+                    createFuelTank();
+                    createTrunk();
+                }
+
+                loadComponents();
             }
 
-            if (!SEATS.isEmpty()) {
-                Seat driver = SEATS.getFirst();
+            noControl = true;
 
+            Seat driver = SEATS.getFirst();
+            if (driver != null) {;
                 if (driver.hasPassengers() && driver.getFirstPassenger() instanceof ServerPlayerEntity player) {
                     handlePlayerInput(player);
 
@@ -222,15 +277,22 @@ public abstract class Vehicle extends Entity {
      * This method should be implemented by subclasses to define how many and where the seats are placed.
      */
     protected abstract void createSeats();
+    protected abstract void createFuelTank();
+    protected abstract void createTrunk();
 
     /**
      * Adds a seat to the vehicle at the specified offsets.
      * The first seat added will always be the driver's seat.
+     * Subclasses should use this method to add a seat instead of
+     * directly creating a seat object to ensure that the seat's NBT
+     * data is saved.
      * @param offsetX The offset of the seat in the X direction.
      * @param offsetY The offset of the seat in the Y direction.
      * @param offsetZ The offset of the seat in the Z direction.
+     * @param seatId The ith seat added to the vehicle, zero-indexed. Seat IDs
+     *               should always be assigned in ascending order.
      */
-    protected void addSeat(double offsetX, double offsetY, double offsetZ) {
+    protected void addSeat(double offsetX, double offsetY, double offsetZ, int seatId) {
         Seat seat = new Seat(
             VehicleRegisterer.SEAT_ENTITY_TYPE,
             this,
@@ -239,7 +301,33 @@ public abstract class Vehicle extends Entity {
             offsetZ
         );
 
-        this.SEATS.add(seat);
+        SEATS.add(seat);
+        SEATS_UUID.add(seat.getUuid());
+    }
+
+    protected void setFuelTank(double offsetX, double offsetY, double offsetZ, Item[] items) {
+        tank = new FuelTank(
+            VehicleRegisterer.FUEL_TANK_ENTITY_TYPE,
+            this,
+            offsetX,
+            offsetY,
+            offsetZ,
+            items
+        );
+
+        tankUuid = tank.getUuid();
+    }
+
+    protected void setTrunk(double offsetX, double offsetY, double offsetZ) {
+        trunk = new Trunk(
+            VehicleRegisterer.TRUNK_ENTITY_TYPE,
+            this,
+            offsetX,
+            offsetY,
+            offsetZ
+        );
+
+        trunkUuid = trunk.getUuid();
     }
 
     @Override
@@ -261,21 +349,41 @@ public abstract class Vehicle extends Entity {
         }
     }
 
-    private void spawnComponents() {
+    private void loadComponents() {
         World world = getWorld();
 
-        for (Seat seat: SEATS) {
-            if (seat != null && !seat.isRemoved()) {
-                world.spawnEntity(seat);
-            }
-        }
-
-        if (tank != null && !tank.isRemoved()) {
+        if (!fromSavedData) {
+            for (Seat seat: SEATS) world.spawnEntity(seat);
             world.spawnEntity(tank);
-        }
-
-        if (trunk != null && !trunk.isRemoved()) {
             world.spawnEntity(trunk);
+        } else {
+            SEATS.clear();
+
+            for (UUID uuid: SEATS_UUID) {
+                for (Seat other: world.getEntitiesByClass(
+                    Seat.class,
+                    getBoundingBox().expand(16),
+                    e -> true
+                )) {
+                    if (other.getUuid().equals(uuid)) SEATS.add(other);
+                }
+            }
+
+            for (FuelTank other: world.getEntitiesByClass(
+                FuelTank.class,
+                getBoundingBox().expand(16),
+                e -> true
+            )) {
+                if (other.getUuid().equals(tankUuid)) tank = other;
+            }
+
+            for (Trunk other: world.getEntitiesByClass(
+                    Trunk.class,
+                    getBoundingBox().expand(16),
+                    e -> true
+            )) {
+                if (other.getUuid().equals(trunkUuid)) trunk = other;
+            }
         }
     }
 

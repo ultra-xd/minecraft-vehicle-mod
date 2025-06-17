@@ -15,7 +15,7 @@ import java.util.UUID;
 public abstract class VehicleComponent extends Entity {
 
     protected Vehicle parent;
-    protected final Vec3d OFFSET;
+    protected Vec3d offset;
     protected UUID parentUuid = null;
 
     protected VehicleComponent(
@@ -28,7 +28,7 @@ public abstract class VehicleComponent extends Entity {
         super(type, parent.getWorld());
         this.parent = parent;
         parentUuid = parent.getUuid();
-        OFFSET = new Vec3d(offsetX, offsetY, offsetZ);
+        offset = new Vec3d(offsetX, offsetY, offsetZ);
 
         updatePosition();
 
@@ -38,7 +38,7 @@ public abstract class VehicleComponent extends Entity {
     protected VehicleComponent(EntityType<?> type, World world) {
         super(type, world);
         this.parent = null;
-        OFFSET = new Vec3d(0d, 0d, 0d);
+        offset = new Vec3d(0d, 0d, 0d);
     }
 
     @Override
@@ -51,6 +51,20 @@ public abstract class VehicleComponent extends Entity {
                 parentUuid = new UUID(most.get(), least.get());
             }
         }
+
+        if (
+            nbt.contains("offsetX") &&
+            nbt.contains("offsetY") &&
+            nbt.contains("offsetZ")
+        ) {
+            Optional<Double> x = nbt.getDouble("offsetX");
+            Optional<Double> y = nbt.getDouble("offsetY");
+            Optional<Double> z = nbt.getDouble("offsetZ");
+
+            if (x.isPresent() && y.isPresent() && z.isPresent()) {
+                offset = new Vec3d(x.get(), y.get(), z.get());
+            }
+        }
     }
 
     @Override
@@ -59,6 +73,10 @@ public abstract class VehicleComponent extends Entity {
             nbt.putLong("parentMost", parentUuid.getMostSignificantBits());
             nbt.putLong("parentLeast", parentUuid.getLeastSignificantBits());
         }
+
+        nbt.putDouble("offsetX", offset.getX());
+        nbt.putDouble("offsetY", offset.getY());
+        nbt.putDouble("offsetZ", offset.getZ());
     }
 
     @Override
@@ -86,9 +104,9 @@ public abstract class VehicleComponent extends Entity {
 
         // Use rotation matrix to calculate new position based on parent's yaw
         Vec3d newPos = new Vec3d(
-                OFFSET.getX() * Math.cos(parentYaw) - OFFSET.getZ() * Math.sin(parentYaw) + parentPos.getX(),
-                OFFSET.getY() + parent.getY(),
-                OFFSET.getX() * Math.sin(parentYaw) + OFFSET.getZ() * Math.cos(parentYaw) + parentPos.getZ()
+                offset.getX() * Math.cos(parentYaw) - offset.getZ() * Math.sin(parentYaw) + parentPos.getX(),
+                offset.getY() + parent.getY(),
+                offset.getX() * Math.sin(parentYaw) + offset.getZ() * Math.cos(parentYaw) + parentPos.getZ()
         );
 
         setPos(newPos.getX(), newPos.getY(), newPos.getZ());
@@ -110,5 +128,9 @@ public abstract class VehicleComponent extends Entity {
     @Override
     public boolean canHit() {
         return true;
+    }
+
+    public Vehicle getParent() {
+        return parent;
     }
 }

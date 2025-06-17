@@ -5,9 +5,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.world.World;
 import net.ultra.vehiclemod.vehicles.Vehicle;
-import net.ultra.vehiclemod.vehicles.VehicleRegisterer;
-import net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.FuelTank;
-import net.ultra.vehiclemod.vehicles.components.entity.trunk.Trunk;
 
 public class Civic extends Vehicle {
     public static final String ITEM_ID = "civic_spawn";
@@ -22,31 +19,24 @@ public class Civic extends Vehicle {
             30,
             5
         );
-
-        tank = new FuelTank(
-            VehicleRegisterer.FUEL_TANK_ENTITY_TYPE,
-            this,
-            -1.5,
-            0.5,
-            -1.5,
-            new Item[] {Items.COAL}
-        );
-
-        trunk = new Trunk(
-            VehicleRegisterer.TRUNK_ENTITY_TYPE,
-            this,
-            0,
-            0.5,
-            -2
-        );
     }
 
     @Override
     protected void createSeats() {
-        addSeat(-0.5, 0.5, 0.5);
-        addSeat(0.5, 0.5, 0.5);
-        addSeat(-0.5, 0.5, -0.5);
-        addSeat(0.5, 0.5, -0.5);
+        addSeat(-0.5, 0.5, 0.5, 0);
+        addSeat(0.5, 0.5, 0.5, 1);
+        addSeat(-0.5, 0.5, -0.5, 2);
+        addSeat(0.5, 0.5, -0.5, 3);
+    }
+
+    @Override
+    protected void createFuelTank() {
+        setFuelTank(-1.5, 0.5, -1.5, new Item[] {Items.COAL});
+    }
+
+    @Override
+    protected void createTrunk() {
+        setTrunk(0, 0.5, -2);
     }
 
     @Override
