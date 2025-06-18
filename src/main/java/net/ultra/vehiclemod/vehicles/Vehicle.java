@@ -110,8 +110,7 @@ public abstract class Vehicle extends Entity {
      * this method is only here because this class extends the entity class, and this method is
      * abstract which requires it to be overridden
      */
-    protected void initDataTracker(DataTracker.Builder builder) {
-    }
+    protected void initDataTracker(DataTracker.Builder builder) {}
 
     @Override
     /**
@@ -121,14 +120,24 @@ public abstract class Vehicle extends Entity {
         return false;
     }
 
+    /**
+     * Reloads all child components from NBT data.
+     * Minecraft does not save which entities are the vehicle's components,
+     * so NBT data and UUIDs are required to reconnect these entities upon reloading
+     * the world.
+     * @param nbt The NBT data.
+     */
     @Override
     protected void readCustomDataFromNbt(NbtCompound nbt) {
+        // Log that data comes from save file
         fromSavedData = true;
         SEATS_UUID.clear();
         SEATS.clear();
 
+        // Loop through all seat UUIDs
         int i = 0;
         while (true) {
+            // Add seat NBT to ArrayList of UUIDs
             if (nbt.contains("seatMost" + i) && nbt.contains("seatLeast" + i)) {
                 Optional<Long> most = nbt.getLong("seatMost" + i);
                 Optional<Long> least = nbt.getLong("seatLeast" + i);
@@ -142,6 +151,7 @@ public abstract class Vehicle extends Entity {
             } else break;
         }
 
+        // Find fuel tank UUID
         if (nbt.contains("tankMost") && nbt.contains("tankLeast")) {
             Optional<Long> most = nbt.getLong("tankMost");
             Optional<Long> least = nbt.getLong("tankLeast");
@@ -151,6 +161,7 @@ public abstract class Vehicle extends Entity {
             }
         }
 
+        // Find trunk UUID
         if (nbt.contains("trunkMost") && nbt.contains("trunkLeast")) {
             Optional<Long> most = nbt.getLong("trunkMost");
             Optional<Long> least = nbt.getLong("trunkLeast");
@@ -161,8 +172,16 @@ public abstract class Vehicle extends Entity {
         }
     }
 
+    /**
+     * Writes all child components UUID into NBT data.
+     * Minecraft does not save which entities are the vehicle's components,
+     * so NBT data and UUIDs are required to reconnect these entities upon reloading
+     * the world.
+     * @param nbt The NBT data.
+     */
     @Override
     protected void writeCustomDataToNbt(NbtCompound nbt) {
+        // Get UUID of all seats and write to NBT
         for (int i = 0; i < SEATS.size(); i++) {
             Seat seat = SEATS.get(i);
 
@@ -173,12 +192,14 @@ public abstract class Vehicle extends Entity {
             }
         }
 
+        // Write the fuel tank UUID to NBT
         if (tank != null && !tank.isRemoved()) {
             UUID uuid = tank.getUuid();
             nbt.putLong("tankMost", uuid.getMostSignificantBits());
             nbt.putLong("tankLeast", uuid.getLeastSignificantBits());
         }
 
+        // Write the trunk UUID to NBT
         if (trunk != null && !trunk.isRemoved()) {
             UUID uuid = trunk.getUuid();
             nbt.putLong("trunkMost", uuid.getMostSignificantBits());
@@ -186,16 +207,17 @@ public abstract class Vehicle extends Entity {
         }
     }
 
-    @Override
     /**
      * this method is used to update the vehicles both on server-side and client-side
      * also handles how vehicles interact with objects
      */
+    @Override
     public void tick() {
         super.tick();
 
         if (!getWorld().isClient) {
             if (age == 1) {
+                // Load new seats if there's no save data
                 if (!fromSavedData) {
                     createSeats();
                     createFuelTank();
@@ -207,7 +229,7 @@ public abstract class Vehicle extends Entity {
 
             // Handle dealing damage to living entities
             List<Entity> collidedEntities = getCollidingLivingEntities();
-            for (Entity entity : collidedEntities) {
+            for (Entity entity: collidedEntities) {
                 if (entity instanceof LivingEntity livingEntity) {
                     if (Math.abs(speed) > 0.15f) {
                         float damage = (float) (DAMAGE_RATE * (Math.abs(speed) * TPS));

@@ -8,7 +8,7 @@ import net.minecraft.util.Identifier;
 import net.ultra.vehiclemod.VehicleMod;
 
 import java.util.Optional;
-
+/** A Rav4 model to render into the world, represented using Minecraft's standard entity modelling data. */
 public class Rav4Model extends EntityModel<EntityRenderState> {
 	public static final String MODEL_ID = "rav4_model";
 
@@ -19,11 +19,19 @@ public class Rav4Model extends EntityModel<EntityRenderState> {
 
 	private final ModelPart root;
 
+	/**
+	 * Initializes a Honda Civic model.
+	 * @param root The model data.
+	 */
 	public Rav4Model(ModelPart root) {
 		super(root);
 		this.root = root;
 	}
 
+	/**
+	 * Gets model data.
+	 * @return The model data.
+	 */
 	public static TexturedModelData getTexturedModelData() {
 		ModelData modelData = new ModelData();
 		ModelPartData modelPartData = modelData.getRoot();
@@ -88,6 +96,11 @@ public class Rav4Model extends EntityModel<EntityRenderState> {
 		return TexturedModelData.of(modelData, 56, 56);
 	}
 
+	/**
+	 * Gets individual model parts, given the name of the part.
+	 * @param name The name of the part.
+	 * @return The corresponding model part.
+	 */
 	@Override
 	public Optional<ModelPart> getPart(String name) {
 		return switch (name) {

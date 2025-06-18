@@ -8,7 +8,7 @@ import net.minecraft.util.Identifier;
 import net.ultra.vehiclemod.VehicleMod;
 
 import java.util.Optional;
-
+/** A KIA Soul model to render into the world, represented using Minecraft's standard entity modelling data. */
 public class SoulModel extends EntityModel<EntityRenderState> {
 	public static final String MODEL_ID = "soul_model";
 
@@ -19,11 +19,19 @@ public class SoulModel extends EntityModel<EntityRenderState> {
 
 	private final ModelPart root;
 
+	/**
+	 * Initializes a KIA Soul model.
+	 * @param root The model data.
+	 */
 	public SoulModel(ModelPart root) {
 		super(root);
 		this.root = root;
 	}
 
+	/**
+	 * Gets model data.
+	 * @return The model data.
+	 */
 	public static TexturedModelData getTexturedModelData() {
 		ModelData modelData = new ModelData();
 		ModelPartData modelPartData = modelData.getRoot();
@@ -84,6 +92,11 @@ public class SoulModel extends EntityModel<EntityRenderState> {
 		return TexturedModelData.of(modelData, 60, 60);
 	}
 
+	/**
+	 * Gets individual model parts, given the name of the part.
+	 * @param name The name of the part.
+	 * @return The corresponding model part.
+	 */
 	@Override
 	public Optional<ModelPart> getPart(String name) {
 		return switch (name) {

@@ -12,45 +12,72 @@ import net.minecraft.world.World;
 import net.ultra.vehiclemod.vehicles.Vehicle;
 import net.ultra.vehiclemod.vehicles.components.entity.VehicleComponent;
 
-
-
+/** A vehicle seat. */
 public class Seat extends VehicleComponent {
 
     public static final String ENTITY_ID = "vehicle_seat";
     public static final double SEAT_WIDTH = 1d;
     public static final double SEAT_HEIGHT = 1d;
 
+    /**
+     * Initializes a vehicle seat.
+     * @param type The type of the entity
+     * @param parent The vehicle which the entity belongs to.
+     * @param offsetX The offset of the entity in the X direction.
+     * @param offsetY The offset of the entity in the Y direction.
+     * @param offsetZ The offset of the entity in the Z direction.
+     */
     public Seat(EntityType<?> type, Vehicle parent, double offsetX, double offsetY, double offsetZ) {
         super(type, parent, offsetX, offsetY, offsetZ);
     }
 
+    /** Constructor used to register a seat. */
     public Seat(EntityType<?> type, World world) {
         super(type, world);
     }
 
+    /** Seats don't require a data tracker so no data tracker builder required. */
     @Override
     protected void initDataTracker(DataTracker.Builder builder) {}
 
+    /**
+     * Ensure that entity does not take damage
+     * @param world The world the entity is in.
+     * @param source The source of the damage.
+     * @param amount The amount of damage taken.
+     * @return Always false, since the entity cannot be damaged.
+     */
     @Override
     public boolean damage(ServerWorld world, DamageSource source, float amount) {
         return false;
     }
 
+    /**
+     * Ensures the passenger doesn't dismount the entity underwater.
+     * @return False, since passenger doesn't dismount underwater.
+     */
     @Override
     public boolean shouldDismountUnderwater() {
         return false;
     }
 
+    /**
+     * Ensures only one passenger of type player entity can ride the seat.
+     * @param passenger The passenger attempting toride the seat.
+     * @return True if can ride, false otherwise.
+     */
     @Override
     public boolean canAddPassenger(Entity passenger) {
         return !hasPassengers() && (passenger instanceof PlayerEntity);
     }
 
+    /** Updates the seat/*/
     @Override
     public void tick() {
         super.tick();
 
         if (!getWorld().isClient) {
+            // Kick player out if sneaking
             if (hasPassengers()) {
                 Entity passenger = getFirstPassenger();
 
@@ -61,23 +88,42 @@ public class Seat extends VehicleComponent {
         }
     }
 
+    /**
+     * Allows player to potentially ride the seat if interacted with
+     * @param player the player
+     * @param hand the hand the player used to interact with this entity
+     * @return ActionResult.SUCCESS if should move hand, PASS otherwise.
+     */
     @Override
     public ActionResult interact(PlayerEntity player, Hand hand) {
         ActionResult actionResult = super.interact(player, hand);
         if (actionResult != ActionResult.PASS) {
             return actionResult;
         } else {
+            // Move hand if can ride, stationary otherwise.
             return (player.shouldCancelInteraction() || !this.getWorld().isClient && !player.startRiding(this)
                     ? ActionResult.PASS
                     : ActionResult.SUCCESS);
         }
     }
 
+    /**
+     * Gets the hitbox dimensions of the entity.
+     * @param pose The pose of the entity, which does not matter since
+     *             this entity only has one pose (the default pose).
+     * @return The hitbox dimensions of the entity.
+     */
     @Override
     public EntityDimensions getDimensions(EntityPose pose) {
         return EntityDimensions.fixed((float) SEAT_WIDTH, (float) SEAT_HEIGHT);
     }
 
+    /**
+     * Handles the position at which the passenger dismounts at.
+     * @param passenger The passenger dismounting.
+     * @return The position of the seat, since the passenger will
+     * have to dismount at the seat.
+     */
     @Override
     public Vec3d updatePassengerForDismount(LivingEntity passenger) {
         return getPos();
@@ -94,6 +140,7 @@ public class Seat extends VehicleComponent {
         if (player.getVehicle() == this && !getWorld().isClient) {
             Vec3d dismountPosition = getPos();
 
+            // Dismount player and move to dismount position.
             player.stopRiding();
             player.teleport(
                 dismountPosition.getX(),
