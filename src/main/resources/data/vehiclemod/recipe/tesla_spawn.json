@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:glass",
+    "$": "minecraft:redstone",
+    ".": "minecraft:iron_ingot"
+  },
+  "pattern": [
+    "##$",
+    "$$$",
+    "..."
+  ],
+  "result": {
+    "count": 1,
+    "id": "vehiclemod:tesla_spawn"
+  }
+}

@@ -1,4 +1,4 @@
-package net.ultra.vehiclemod.vehicles.vehicle_types.civic.custom;
+package net.ultra.vehiclemod.vehicles.vehicle_types.tesla.custom;
 
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.Item;
@@ -6,11 +6,11 @@ import net.minecraft.item.Items;
 import net.minecraft.world.World;
 import net.ultra.vehiclemod.vehicles.Vehicle;
 
-public class Civic extends Vehicle {
-    public static final String ITEM_ID = "civic_spawn";
-    public static final String ENTITY_ID = "civic";
+public class Tesla extends Vehicle {
+    public static final String ITEM_ID = "tesla_spawn";
+    public static final String ENTITY_ID = "tesla";
 
-    public Civic(EntityType<? extends Vehicle> type, World world) {
+    public Tesla(EntityType<? extends Vehicle> type, World world) {
         super(
             type,
             world,
@@ -31,7 +31,7 @@ public class Civic extends Vehicle {
 
     @Override
     protected void createFuelTank() {
-        setFuelTank(-1.5, 0.5, -1.5, new Item[] {Items.COAL});
+        setFuelTank(-1.5, 0.5, -1.5, new Item[] {Items.REDSTONE});
     }
 
     @Override

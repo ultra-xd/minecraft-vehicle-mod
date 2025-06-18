@@ -32,6 +32,12 @@ import net.ultra.vehiclemod.vehicles.components.entity.trunk.TrunkScreenHandler;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.client.CivicModel;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.client.CivicRenderer;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.custom.Civic;
+import net.ultra.vehiclemod.vehicles.vehicle_types.tesla.client.TeslaModel;
+import net.ultra.vehiclemod.vehicles.vehicle_types.tesla.client.TeslaRenderer;
+import net.ultra.vehiclemod.vehicles.vehicle_types.tesla.custom.Tesla;
+import net.ultra.vehiclemod.vehicles.vehicle_types.truck.client.TruckModel;
+import net.ultra.vehiclemod.vehicles.vehicle_types.truck.client.TruckRenderer;
+import net.ultra.vehiclemod.vehicles.vehicle_types.truck.custom.Truck;
 
 import java.util.HashMap;
 
@@ -108,8 +114,14 @@ public final class VehicleRegisterer {
         registerTrunks();
         registerScreenHandlers();
         registerScreens();
+
         registerVehicle(Civic.ENTITY_ID, Civic::new);
+        registerVehicle(Truck.ENTITY_ID, Truck::new);
+        registerVehicle(Tesla.ENTITY_ID, Tesla::new);
+
         registerItem(Civic.ITEM_ID, Civic.ENTITY_ID, Civic::new);
+        registerItem(Truck.ITEM_ID, Truck.ENTITY_ID, Truck::new);
+        registerItem(Tesla.ITEM_ID, Tesla.ENTITY_ID, Tesla::new);
     }
 
     public static void clientRegisterAll() {
@@ -120,7 +132,19 @@ public final class VehicleRegisterer {
             CivicRenderer::new
         );
 
+        registerRenderer(
+            VehicleRegisterer.getVehicleType(Truck.ENTITY_ID),
+            TruckRenderer::new
+        );
+
+        registerRenderer(
+            VehicleRegisterer.getVehicleType(Tesla.ENTITY_ID),
+            TeslaRenderer::new
+        );
+
         registerModel(CivicModel.CIVIC, CivicModel::getTexturedModelData);
+        registerModel(TruckModel.TRUCK, TruckModel::getTexturedModelData);
+        registerModel(TeslaModel.TESLA, TeslaModel::getTexturedModelData);
     }
 
     private static <T extends Vehicle> void registerItem(
@@ -186,8 +210,8 @@ public final class VehicleRegisterer {
     }
 
     private static void registerModel(
-            EntityModelLayer model,
-            EntityModelLayerRegistry.TexturedModelDataProvider provider
+        EntityModelLayer model,
+        EntityModelLayerRegistry.TexturedModelDataProvider provider
     ) {
         VehicleMod.LOGGER.info(
             "Registering {} model for {}", model.name(), VehicleMod.MOD_ID
@@ -254,8 +278,8 @@ public final class VehicleRegisterer {
     public static <T extends Vehicle> EntityType<T> getVehicleType(String ID) {
         return (EntityType<T>) ENTITY_TYPES.get(ID);
     }
-
-    public static <T extends Vehicle> VehicleItem<T> getItem(String ID) {
-        return (VehicleItem<T>) ITEMS.get(ID);
-    }
+//
+//    public static <T extends Vehicle> VehicleItem<T> getItem(String ID) {
+//        return (VehicleItem<T>) ITEMS.get(ID);
+//    }
 }

@@ -245,7 +245,11 @@ public abstract class Vehicle extends Entity {
 
                 } else noControl = true;
 
-            } else noControl = true;
+            }
+
+            if (isInLava()) {
+                explode((float) MAX_EXPLOSION_POWER);
+            }
 
             // Accelerate to the ground if not on the ground
             if (!isOnGround()) {
@@ -297,10 +301,10 @@ public abstract class Vehicle extends Entity {
         } else if (!tank.isEmpty()) {
             if (input.forward()) {
                 noControl = false;
-                speed = Math.min(speed + unitAccelerationChange, MAX_SPEED);
+                speed = Math.min(speed + unitAccelerationChange, getCurrentMaxSpeed());
             } else if (input.backward()) {
                 noControl = false;
-                speed = Math.max(speed - unitAccelerationChange, -MAX_SPEED / 3);
+                speed = Math.max(speed - unitAccelerationChange, -getCurrentMaxSpeed() / 3);
             }
         }
 
@@ -444,6 +448,10 @@ public abstract class Vehicle extends Entity {
     @Override
     public float getStepHeight() {
         return 1.0f;
+    }
+
+    public double getCurrentMaxSpeed() {
+        return isInFluid() ? MAX_SPEED / 2: MAX_SPEED;
     }
 
     public void explode(float power) {

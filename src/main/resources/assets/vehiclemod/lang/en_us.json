@@ -1,3 +1,5 @@
 {
-  "item.vehiclemod.civic_spawn": "Honda Civic"
+  "item.vehiclemod.civic_spawn": "Honda Civic",
+  "item.vehiclemod.truck_spawn": "Garbage Truck",
+  "item.vehiclemod.tesla_spawn": "Tesla"
 }
