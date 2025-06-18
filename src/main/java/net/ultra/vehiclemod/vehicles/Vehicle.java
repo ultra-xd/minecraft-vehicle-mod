@@ -25,9 +25,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- *
+ * Creates a vehicle class that extends minecraft's entity class
  */
 public abstract class Vehicle extends Entity {
+    //sets the car's tick speed to 20 ticks per second
     private static final double TPS = 20;
 
     // Vehicle physics properties
@@ -49,6 +50,7 @@ public abstract class Vehicle extends Entity {
     protected double fuelTicks = 0;
 
     protected static final float DAMAGE_RATE = 1.0f;
+
 
     protected final ArrayList<Seat> SEATS = new ArrayList<>();
     protected final ArrayList<UUID> SEATS_UUID = new ArrayList<>();
@@ -75,6 +77,16 @@ public abstract class Vehicle extends Entity {
         ACCELERATION_TICKS = DEFAULT_ACCELERATION_TICKS;
     }
 
+    /**
+     * This constructor is used only for the bugatti due to the faster acceleration perk
+      * @param type the type of vehicle
+     * @param world the world that the vehicle is in
+     * @param MAX_SPEED max speed the vehicle can go
+     * @param BRAKE_POWER the brake power of the car
+     * @param MAX_EXPLOSION_POWER the max explosion power
+     * @param ACCELERATION_TICKS the custom acceleration
+     * @param FUEL_CONSUMPTION_RATE the fuel consumption rate
+     */
     protected Vehicle(
         EntityType<? extends Vehicle> type,
         World world,
@@ -94,10 +106,17 @@ public abstract class Vehicle extends Entity {
     }
 
     @Override
+    /**
+     * this method is only here because this class extends the entity class, and this method is
+     * abstract which requires it to be overridden
+     */
     protected void initDataTracker(DataTracker.Builder builder) {
     }
 
     @Override
+    /**
+     * this method prevents the car from taking damage
+     */
     public boolean damage(ServerWorld world, DamageSource source, float amount) {
         return false;
     }
@@ -168,6 +187,10 @@ public abstract class Vehicle extends Entity {
     }
 
     @Override
+    /**
+     * this method is used to update the vehicles both on server-side and client-side
+     * also handles how vehicles interact with objects
+     */
     public void tick() {
         super.tick();
 
@@ -286,6 +309,10 @@ public abstract class Vehicle extends Entity {
         if (trunk != null && !trunk.isRemoved()) trunk.updatePosition();
     }
 
+    /**
+     * handles user input
+     * @param player the player entity
+     */
     private void handlePlayerInput(ServerPlayerEntity player) {
         PlayerInput input = player.getPlayerInput();
 
