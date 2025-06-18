@@ -14,10 +14,10 @@ public class Soul extends Vehicle {
         super(
                 type,
                 world,
-                27,
-                7,
-                50,
-                10
+                1,
+                0.01,
+                20,
+                1
         );
     }
 
@@ -25,7 +25,7 @@ public class Soul extends Vehicle {
     protected void createSeats() {
         addSeat(-0.5, 0.5, 0.5, 0);
         addSeat(0.5, 0.5, 0.5, 1);
-        addSeat(-0.5, 0.5, -0.5, 2);
+        addSeat(-0.5, 0.5, -0.5 , 2);
         addSeat(0.5, 0.5, -0.5, 3);
     }
 
