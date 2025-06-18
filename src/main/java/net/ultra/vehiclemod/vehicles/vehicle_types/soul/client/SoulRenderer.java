@@ -15,20 +15,35 @@ import net.ultra.vehiclemod.vehicles.vehicle_types.bugatti.client.BugattiModel;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.custom.Civic;
 import net.ultra.vehiclemod.vehicles.vehicle_types.soul.custom.Soul;
 
+/**
+ * creates a kia soul renderer class to handle all things kia soul rendering
+ */
 public class SoulRenderer extends VehicleRenderer<Soul> {
     public static final Identifier TEXTURE = Identifier.of(VehicleMod.MOD_ID, "textures/entity/soul.png");
     public final SoulModel MODEL;
 
+    //kia soul dimensions
     public static final float MODEL_LENGTH = 8.0f;
     public static final float MODEL_WIDTH = 8.0f;
     public static final float MODEL_HEIGHT = 8.0f;
 
 
+    /**
+     * Kia soul renderer constructor
+     * @param context creates the kia soul entity renderer
+     */
     public SoulRenderer(EntityRendererFactory.Context context) {
         super(context);
         MODEL = new SoulModel(context.getPart(SoulModel.SOUL));
     }
 
+    /**
+     * creates the 3d model of the kia soul
+     * @param entityRenderState determines how the entity is rotated
+     * @param ms how the model is transformed
+     * @param vcp how the vertices of the model is passed in
+     * @param light the brightness of the model
+     */
     @Override
     public void render(
         VehicleRenderState entityRenderState,

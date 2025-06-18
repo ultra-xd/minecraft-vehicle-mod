@@ -15,20 +15,34 @@ import net.ultra.vehiclemod.vehicles.vehicle_types.civic.client.CivicModel;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.custom.Civic;
 import net.ultra.vehiclemod.vehicles.vehicle_types.tesla.custom.Tesla;
 
+/**
+ * creates a telsa renderer class to handle all things telsa rendering
+ */
 public class TeslaRenderer extends VehicleRenderer<Tesla> {
     public static final Identifier TEXTURE = Identifier.of(VehicleMod.MOD_ID, "textures/entity/tesla.png");
     public final TeslaModel MODEL;
 
+    //tesla dimensions
     public static final float MODEL_LENGTH = 8.0f;
     public static final float MODEL_WIDTH = 8.0f;
     public static final float MODEL_HEIGHT = 8.0f;
 
-
+    /**
+     * tesla renderer constructor
+     * @param context creates the tesla entity renderer
+     */
     public TeslaRenderer(EntityRendererFactory.Context context) {
         super(context);
         MODEL = new TeslaModel(context.getPart(TeslaModel.TESLA));
     }
 
+    /**
+     * creates the 3d model of the tesla
+     * @param entityRenderState determines how the entity is rotated
+     * @param ms how the model is transformed
+     * @param vcp how the vertices of the model is passed in
+     * @param light the brightness of the model
+     */
     @Override
     public void render(
         VehicleRenderState entityRenderState,

@@ -60,6 +60,16 @@ public abstract class Vehicle extends Entity {
     protected UUID trunkUuid = null;
     private boolean fromSavedData = false;
 
+    /**
+     * This constructor is used by all subclasses except the bugatti
+     * saves the vehicle's stats into their respective variables
+     * @param type the vehicle type
+     * @param world the world it is in
+     * @param MAX_SPEED the max speed
+     * @param BRAKE_POWER the brake power
+     * @param MAX_EXPLOSION_POWER the max explosion power
+     * @param FUEL_CONSUMPTION_RATE the fuel consumption rate
+     */
     protected Vehicle(
         EntityType<? extends Vehicle> type,
         World world,
@@ -105,11 +115,12 @@ public abstract class Vehicle extends Entity {
         this.FUEL_CONSUMPTION_RATE = FUEL_CONSUMPTION_RATE * TPS;
     }
 
-    @Override
+
     /**
      * this method is only here because this class extends the entity class, and this method is
      * abstract which requires it to be overridden
      */
+    @Override
     protected void initDataTracker(DataTracker.Builder builder) {
     }
 
@@ -346,6 +357,9 @@ public abstract class Vehicle extends Entity {
         velocityDirty = true;
     }
 
+    /**
+     * slowly brings the car to a stop when it is coasting
+     */
     private void adjustVelocityWhileCoasting() {
         if (speed >= 0) {
             speed = Math.max(speed - BRAKE_POWER * COASTING_PROPORTIONALITY, 0);
@@ -360,8 +374,18 @@ public abstract class Vehicle extends Entity {
      */
     protected abstract void createSeats();
 
+    /**
+     * Creates the fuel tank for the vehicle
+     * This method will be implemented by subclasses to create the fuel tank at different coordiantes
+     * based on the vehicle's size
+     */
     protected abstract void createFuelTank();
 
+    /**
+     * Creates the trunk for the vehicle
+     * This method will be implemented by subclasses to create the fuel tank at different coords
+     * depending on the vehicle's size
+     */
     protected abstract void createTrunk();
 
     /**
@@ -390,6 +414,13 @@ public abstract class Vehicle extends Entity {
         SEATS_UUID.add(seat.getUuid());
     }
 
+    /**
+     * Creates the fuel tank for the vehicle
+     * @param offsetX the x coordinate of the fuel tank relative to the vehicle's coordinate
+     * @param offsetY the y coordinate of the fuel tank relative to the vehicle's coordinate
+     * @param offsetZ the z coordinate of the fuel tank relative to the vehicle's coordinate
+     * @param items the items that are inside the fuel tank
+     */
     protected void setFuelTank(double offsetX, double offsetY, double offsetZ, Item[] items) {
         tank = new FuelTank(
             VehicleRegisterer.FUEL_TANK_ENTITY_TYPE,
@@ -403,6 +434,12 @@ public abstract class Vehicle extends Entity {
         tankUuid = tank.getUuid();
     }
 
+    /**
+     * Creates the trunk for the vehicle
+     * @param offsetX the x coordinate of the trunk relative to the vehicle's coordinate
+     * @param offsetY the y coordinate of the trunk relative to the vehicle's coordinate
+     * @param offsetZ the z coordinate of the trunk relative to the vehicle's coordinate
+     */
     protected void setTrunk(double offsetX, double offsetY, double offsetZ) {
         trunk = new Trunk(
             VehicleRegisterer.TRUNK_ENTITY_TYPE,
@@ -415,6 +452,10 @@ public abstract class Vehicle extends Entity {
         trunkUuid = trunk.getUuid();
     }
 
+    /**
+     * Removes all entities connected to the vehicle when it despawns
+     * @param reason The reason the vehicle is being removed
+     */
     @Override
     public void remove(RemovalReason reason) {
         super.remove(reason);
@@ -434,6 +475,9 @@ public abstract class Vehicle extends Entity {
         }
     }
 
+    /**
+     * replaces the vehicle components when the user logs back into the world
+     */
     private void loadComponents() {
         World world = getWorld();
 
@@ -472,15 +516,27 @@ public abstract class Vehicle extends Entity {
         }
     }
 
+    /**
+     * getter for the the max height the vehicle can drive up
+     * @return the max height the vehicle is able to drive up
+     */
     @Override
     public float getStepHeight() {
         return 1.0f;
     }
 
+    /**
+     * A getter for the vehicle's current max speed based on it's environment
+     * @return the max speed the vehicle can go
+     */
     public double getCurrentMaxSpeed() {
         return isInFluid() ? MAX_SPEED / 2: MAX_SPEED;
     }
 
+    /**
+     * creates an explosion and deletes the vehicle
+     * @param power the explosion power that the vehicle has
+     */
     public void explode(float power) {
         World world = getWorld();
 
@@ -498,10 +554,17 @@ public abstract class Vehicle extends Entity {
         }
     }
 
+    /**
+     * Determines the explosion power depending on the vehicle's current speed
+     */
     public void explodeProportionalToSpeed() {
         explode((float) (Math.abs(speed) / MAX_SPEED * MAX_EXPLOSION_POWER));
     }
 
+    /**
+     * checks if the vehicle is able to climb the blocks in from on it
+     * @return true if it isn't able to climb, false if it is able to climb
+     */
     private boolean exceedsMaxClimbHeight() {
         if (Math.abs(speed) <= MAX_SPEED * EXPLOSION_PROPORTIONALITY) return false;
 
@@ -516,6 +579,11 @@ public abstract class Vehicle extends Entity {
         return false;
     }
 
+    /**
+     * Determines which entities should take damage or not
+     * loops through all nearby entities and filters out the entities that are in the vehicle and non-living entities
+     * @return true if the entity is a living entity, false if it isn't
+     */
     private List<Entity> getCollidingLivingEntities() {
         return getWorld().getOtherEntities(
             this,
@@ -532,6 +600,10 @@ public abstract class Vehicle extends Entity {
         );
     }
 
+    /**
+     * loops through all entities and looks for other vehicle entities
+     * @return true if it is a vehicle, false if it isn't
+     */
     private List<Entity> getCollidingVehicles() {
         return getWorld().getOtherEntities(
             this,
