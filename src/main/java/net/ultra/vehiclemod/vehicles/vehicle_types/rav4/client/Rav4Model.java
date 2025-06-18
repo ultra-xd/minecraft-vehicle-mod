@@ -20,7 +20,7 @@ public class Rav4Model extends EntityModel<EntityRenderState> {
 	private final ModelPart root;
 
 	/**
-	 * Initializes a Honda Civic model.
+	 * Initializes a Rav4 model.
 	 * @param root The model data.
 	 */
 	public Rav4Model(ModelPart root) {

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:glass",
+    "$": "minecraft:iron_ingot",
+    ".": "minecraft:iron_block",
+    "%": "minecraft:dropper",
+    "&": "minecraft:redstone"
+  },
+  "pattern": [
+    "#$%",
+    "$&%",
+    "$$."
+  ],
+  "result": {
+    "count": 1,
+    "id": "vehiclemod:rav4_spawn"
+  }
+}

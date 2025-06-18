@@ -157,6 +157,7 @@ public final class VehicleRegisterer {
     public static void clientRegisterAll() {
         registerComponentRenderers();
 
+        // Register all vehicle renders
         registerRenderer(
             VehicleRegisterer.getVehicleType(Civic.ENTITY_ID),
             CivicRenderer::new
@@ -187,6 +188,7 @@ public final class VehicleRegisterer {
             SoulRenderer::new
         );
 
+        // Register all vehicle models
         registerModel(CivicModel.CIVIC, CivicModel::getTexturedModelData);
         registerModel(TruckModel.TRUCK, TruckModel::getTexturedModelData);
         registerModel(TeslaModel.TESLA, TeslaModel::getTexturedModelData);
@@ -301,18 +303,22 @@ public final class VehicleRegisterer {
         EntityModelLayerRegistry.registerModelLayer(model, provider);
     }
 
+    /** Registers vehicle seat entity. */
     private static void registerSeat() {
         Registry.register(Registries.ENTITY_TYPE, SEAT_IDENTIFIER, SEAT_ENTITY_TYPE);
     }
 
+    /** Registers vehicle fuel tank entity. */
     private static void registerFuelTanks() {
         Registry.register(Registries.ENTITY_TYPE, FUEL_TANK_IDENTIFIER, FUEL_TANK_ENTITY_TYPE);
     }
 
+    /** Registers vehicle trunk entity. */
     private static void registerTrunks() {
         Registry.register(Registries.ENTITY_TYPE, TRUNK_IDENTIFIER, TRUNK_ENTITY_TYPE);
     }
 
+    /** Registers renders of all vehicle components. They don't render, so they all use NoOpRenderer. */
     private static void registerComponentRenderers() {
         registerRenderer(
             SEAT_ENTITY_TYPE,
@@ -330,6 +336,7 @@ public final class VehicleRegisterer {
         );
     }
 
+    /** Registers fuel tank and trunk screen handlers. */
     private static void registerScreenHandlers() {
         Registry.register(
             Registries.SCREEN_HANDLER,
@@ -344,6 +351,7 @@ public final class VehicleRegisterer {
         );
     }
 
+    /** Registers fuel tank and trunk screens */
     private static void registerScreens() {
         HandledScreens.register(
             FUEL_TANK_SCREEN_HANDLER_TYPE,
@@ -356,6 +364,12 @@ public final class VehicleRegisterer {
         );
     }
 
+    /**
+     * Gets vehicle type based on entity ID.
+     * @param ID The vehicle ID
+     * @return The vehicle type.
+     * @param <T> The class of the vehicle.
+     */
     public static <T extends Vehicle> EntityType<T> getVehicleType(String ID) {
         return (EntityType<T>) ENTITY_TYPES.get(ID);
     }

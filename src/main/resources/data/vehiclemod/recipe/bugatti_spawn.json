@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:glass",
+    "$": "minecraft:redstone_block",
+    ".": "minecraft:iron_block",
+    "%": "minecraft:dropper",
+    "&": "minecraft:netherite_ingot"
+  },
+  "pattern": [
+    ".#%",
+    "$&%",
+    "..."
+  ],
+  "result": {
+    "count": 1,
+    "id": "vehiclemod:bugatti_spawn"
+  }
+}

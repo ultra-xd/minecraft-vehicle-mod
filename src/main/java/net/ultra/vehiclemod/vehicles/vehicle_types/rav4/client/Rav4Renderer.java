@@ -25,7 +25,6 @@ public class Rav4Renderer extends VehicleRenderer<Rav4> {
     public static final float MODEL_WIDTH = 8.0f;
     public static final float MODEL_HEIGHT = 8.0f;
 
-
     /**
      * rav4 renderer constructor
      * @param context creates the rav4 entity renderer
