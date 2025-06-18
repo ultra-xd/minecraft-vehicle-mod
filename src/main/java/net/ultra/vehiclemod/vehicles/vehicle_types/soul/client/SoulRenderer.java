@@ -23,7 +23,6 @@ public class SoulRenderer extends VehicleRenderer<Soul> {
     public static final float MODEL_WIDTH = 8.0f;
     public static final float MODEL_HEIGHT = 8.0f;
 
-
     public SoulRenderer(EntityRendererFactory.Context context) {
         super(context);
         MODEL = new SoulModel(context.getPart(SoulModel.SOUL));
@@ -39,10 +38,10 @@ public class SoulRenderer extends VehicleRenderer<Soul> {
         ms.push();
 
         ms.scale(MODEL_LENGTH, MODEL_HEIGHT, MODEL_WIDTH);
-        ms.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(360f - entityRenderState.yaw));
+        ms.multiply(RotationAxis.POSITIVE_X.rotationDegrees(180));
+        ms.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(246f + entityRenderState.yaw));
         VertexConsumer vertexConsumer = vcp.getBuffer(RenderLayer.getEntityCutout(TEXTURE));
         MODEL.render(ms, vertexConsumer, light, OverlayTexture.DEFAULT_UV);
-
         ms.pop();
     }
 }
