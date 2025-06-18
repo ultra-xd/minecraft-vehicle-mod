@@ -16,7 +16,7 @@ import net.ultra.vehiclemod.vehicles.vehicle_types.civic.custom.Civic;
 import net.ultra.vehiclemod.vehicles.vehicle_types.tesla.custom.Tesla;
 
 /**
- * creates a telsa renderer class to handle all things telsa rendering
+ * creates a tesla renderer class to handle all things telsa rendering
  */
 public class TeslaRenderer extends VehicleRenderer<Tesla> {
     public static final Identifier TEXTURE = Identifier.of(VehicleMod.MOD_ID, "textures/entity/tesla.png");
