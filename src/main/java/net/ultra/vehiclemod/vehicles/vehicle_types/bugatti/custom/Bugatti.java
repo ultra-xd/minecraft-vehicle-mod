@@ -14,10 +14,10 @@ public class Bugatti extends Vehicle {
         super(
                 type,
                 world,
-                27,
-                7,
-                50,
-                10
+                55,
+                35,
+                70,
+                2
         );
     }
 

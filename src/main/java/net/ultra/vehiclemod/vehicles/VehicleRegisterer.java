@@ -190,7 +190,6 @@ public final class VehicleRegisterer {
         registerModel(CivicModel.CIVIC, CivicModel::getTexturedModelData);
         registerModel(TruckModel.TRUCK, TruckModel::getTexturedModelData);
         registerModel(TeslaModel.TESLA, TeslaModel::getTexturedModelData);
-        registerModel(CivicModel.CIVIC, CivicModel::getTexturedModelData);
         registerModel(Rav4Model.RAV4, Rav4Model::getTexturedModelData);
         registerModel(BugattiModel.BUGATTI, BugattiModel::getTexturedModelData);
         registerModel(SoulModel.SOUL, SoulModel::getTexturedModelData);
