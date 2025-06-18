@@ -29,10 +29,18 @@ import net.ultra.vehiclemod.vehicles.components.entity.seat.Seat;
 import net.ultra.vehiclemod.vehicles.components.entity.trunk.Trunk;
 import net.ultra.vehiclemod.vehicles.components.entity.trunk.TrunkInventoryScreen;
 import net.ultra.vehiclemod.vehicles.components.entity.trunk.TrunkScreenHandler;
+import net.ultra.vehiclemod.vehicles.vehicle_types.bugatti.client.BugattiModel;
+import net.ultra.vehiclemod.vehicles.vehicle_types.bugatti.custom.Bugatti;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.client.CivicModel;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.client.CivicRenderer;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.custom.Civic;
-
+import net.ultra.vehiclemod.vehicles.vehicle_types.rav4.client.Rav4Model;
+import net.ultra.vehiclemod.vehicles.vehicle_types.rav4.custom.Rav4;
+import net.ultra.vehiclemod.vehicles.vehicle_types.rav4.client.Rav4Renderer;
+import net.ultra.vehiclemod.vehicles.vehicle_types.bugatti.client.BugattiRenderer;
+import net.ultra.vehiclemod.vehicles.vehicle_types.soul.client.SoulModel;
+import net.ultra.vehiclemod.vehicles.vehicle_types.soul.custom.Soul;
+import net.ultra.vehiclemod.vehicles.vehicle_types.soul.client.SoulRenderer;
 import java.util.HashMap;
 
 public final class VehicleRegisterer {
@@ -110,6 +118,12 @@ public final class VehicleRegisterer {
         registerScreens();
         registerVehicle(Civic.ENTITY_ID, Civic::new);
         registerItem(Civic.ITEM_ID, Civic.ENTITY_ID, Civic::new);
+        registerVehicle(Rav4.ENTITY_ID, Rav4::new);
+        registerItem(Rav4.ITEM_ID, Rav4.ENTITY_ID, Rav4::new);
+        registerVehicle(Bugatti.ENTITY_ID, Bugatti::new);
+        registerItem(Bugatti.ITEM_ID, Bugatti.ENTITY_ID, Bugatti::new);
+        registerVehicle(Soul.ENTITY_ID, Soul::new);
+        registerItem(Soul.ITEM_ID, Soul.ENTITY_ID, Soul::new);
     }
 
     public static void clientRegisterAll() {
@@ -118,9 +132,26 @@ public final class VehicleRegisterer {
         registerRenderer(
             VehicleRegisterer.getVehicleType(Civic.ENTITY_ID),
             CivicRenderer::new
+
+        );
+        registerRenderer(
+            VehicleRegisterer.getVehicleType(Rav4.ENTITY_ID),
+            Rav4Renderer::new
         );
 
+        registerRenderer(
+            VehicleRegisterer.getVehicleType(Bugatti.ENTITY_ID),
+            BugattiRenderer::new
+        );
+
+        registerRenderer(
+            VehicleRegisterer.getVehicleType(Soul.ENTITY_ID),
+            SoulRenderer::new
+        );
         registerModel(CivicModel.CIVIC, CivicModel::getTexturedModelData);
+        registerModel(Rav4Model.RAV4, Rav4Model::getTexturedModelData);
+        registerModel(BugattiModel.BUGATTI, BugattiModel::getTexturedModelData);
+        registerModel(SoulModel.SOUL, SoulModel::getTexturedModelData);
     }
 
     private static <T extends Vehicle> void registerItem(
