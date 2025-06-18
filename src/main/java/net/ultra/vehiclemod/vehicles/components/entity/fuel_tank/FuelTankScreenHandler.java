@@ -39,7 +39,7 @@ public class FuelTankScreenHandler extends ScreenHandler {
                 addSlot(new FilteredSlot(
                     inventory,
                     slotIndex,
-                    44 + x * SLOT_SIZE, // TODO change the exact slot positions
+                    44 + x * SLOT_SIZE,
                     20 + y * SLOT_SIZE,
                     items
                 ));

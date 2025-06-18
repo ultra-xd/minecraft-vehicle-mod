@@ -40,13 +40,15 @@ import net.ultra.vehiclemod.vehicles.vehicle_types.truck.client.TruckRenderer;
 import net.ultra.vehiclemod.vehicles.vehicle_types.truck.custom.Truck;
 
 import java.util.HashMap;
-
+/** Registers all entities, items, renderers, screen handlers, and screens. */
 public final class VehicleRegisterer {
     private VehicleRegisterer() {}
 
+    // Store all entity types and items in a HashMap, with the entity/item id being the key
     private static final HashMap<String, EntityType<? extends Vehicle>> ENTITY_TYPES = new HashMap<>();
     private static final HashMap<String, VehicleItem<? extends Vehicle>> ITEMS = new HashMap<>();
 
+    // Create identifiers
     private static final Identifier SEAT_IDENTIFIER = Identifier.of(
         VehicleMod.MOD_ID, Seat.ENTITY_ID
     );
@@ -59,6 +61,7 @@ public final class VehicleRegisterer {
         VehicleMod.MOD_ID, Trunk.ENTITY_ID
     );
 
+    // Create entity types
     public static final EntityType<Seat> SEAT_ENTITY_TYPE = EntityType.Builder.<Seat>create(
         Seat::new,
         SpawnGroup.MISC
@@ -89,6 +92,7 @@ public final class VehicleRegisterer {
      .makeFireImmune()
      .build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, TRUNK_IDENTIFIER));
 
+    // Create screen handler types
     public static final ScreenHandlerType<FuelTankScreenHandler> FUEL_TANK_SCREEN_HANDLER_TYPE = new ScreenHandlerType<>(
         (syncId, playerInventory) -> new FuelTankScreenHandler(
             syncId,
@@ -108,22 +112,34 @@ public final class VehicleRegisterer {
         FeatureFlags.VANILLA_FEATURES
     );
 
+    /**
+     * Registers all that is required on the server, including
+     * seats, fuel tanks, trunks, screen handlers, screens,
+     * vehicles and items.
+     */
     public static void serverRegisterAll() {
+        // Register vehicle components
         registerSeat();
         registerFuelTanks();
         registerTrunks();
         registerScreenHandlers();
         registerScreens();
 
+        // Register vehicles
         registerVehicle(Civic.ENTITY_ID, Civic::new);
         registerVehicle(Truck.ENTITY_ID, Truck::new);
         registerVehicle(Tesla.ENTITY_ID, Tesla::new);
 
+        // Register items
         registerItem(Civic.ITEM_ID, Civic.ENTITY_ID, Civic::new);
         registerItem(Truck.ITEM_ID, Truck.ENTITY_ID, Truck::new);
         registerItem(Tesla.ITEM_ID, Tesla.ENTITY_ID, Tesla::new);
     }
 
+    /**
+     * Registers all that is required on the client, including
+     * renderers and models.
+     */
     public static void clientRegisterAll() {
         registerComponentRenderers();
 
@@ -147,6 +163,13 @@ public final class VehicleRegisterer {
         registerModel(TeslaModel.TESLA, TeslaModel::getTexturedModelData);
     }
 
+    /**
+     * Registers an vehicle item, which can place down a vehicle entity.
+     * @param itemId The item ID.
+     * @param entityId The vehicle ID to be placed.
+     * @param factory The vehicle entity factory, which creates the vehicle.
+     * @param <T> The class of the vehicle to be created.
+     */
     private static <T extends Vehicle> void registerItem(
         String itemId,
         String entityId,
@@ -154,31 +177,43 @@ public final class VehicleRegisterer {
     ) {
         VehicleMod.LOGGER.info("Registering {} item for {}", itemId, VehicleMod.MOD_ID);
 
+        // Create identifier for the item
         Identifier identifier = Identifier.of(VehicleMod.MOD_ID, itemId);
 
+        // Register the item
         VehicleItem<T> item = Registry.register(
             Registries.ITEM,
             identifier,
             new VehicleItem<T>(new VehicleItem.Settings().registryKey(RegistryKey.of(
                 RegistryKeys.ITEM,
                 identifier
-            ))).factory(factory).entityId(entityId)
+            ))).factory(factory).entityId(entityId) // Add the vehicle to be spawned
         );
 
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS)
+        // Add item into search menu
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL)
             .register(entries -> entries.add(item));
 
+        // Add item to HashMap
         ITEMS.put(itemId, item);
     }
 
+    /**
+     * Registers a vehicle entity.
+     * @param ID The entity ID of the vehicle entity.
+     * @param factory The vehicle entity factory, which creates the vehicle.
+     * @param <T> The class of the vehicle to be created.
+     */
     private static <T extends Vehicle> void registerVehicle(
         String ID,
         EntityType.EntityFactory<T> factory
     ) {
         VehicleMod.LOGGER.info("Registering {} entity for {}", ID, VehicleMod.MOD_ID);
 
+        // Create the entity identifier
         Identifier identifier = Identifier.of(VehicleMod.MOD_ID, ID);
 
+        // Create the entity type of the vehicle
         EntityType<T> vehicleEntityType = EntityType.Builder.create(
             factory,
             SpawnGroup.MISC
@@ -189,26 +224,40 @@ public final class VehicleRegisterer {
          .trackingTickInterval(1)
          .build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, identifier));
 
+        // Register the entity type
         Registry.register(
             Registries.ENTITY_TYPE,
             identifier,
             vehicleEntityType
         );
 
+        // Add the entity type to HashMap
         ENTITY_TYPES.put(ID, vehicleEntityType);
     }
 
+    /**
+     * Registers a renderer for an entity.
+     * @param type The entity type.
+     * @param factory The renderer factory which creates entity renderers.
+     * @param <T> The class of the entity to render.
+     */
     private static <T extends Entity> void registerRenderer(
-            EntityType<T> vehicleType,
+            EntityType<T> type,
             EntityRendererFactory<T> factory
     ) {
         VehicleMod.LOGGER.info(
-                "Registering {} renderer for {}", vehicleType.getName(), VehicleMod.MOD_ID
+            "Registering {} renderer for {}", type.getName(), VehicleMod.MOD_ID
         );
 
-        EntityRendererRegistry.register(vehicleType, factory);
+        // Register the renderer
+        EntityRendererRegistry.register(type, factory);
     }
 
+    /**
+     * Registers the model of an entity, i.e how it looks.
+     * @param model The model of the entity.
+     * @param provider The provider of the model data.
+     */
     private static void registerModel(
         EntityModelLayer model,
         EntityModelLayerRegistry.TexturedModelDataProvider provider
@@ -278,8 +327,4 @@ public final class VehicleRegisterer {
     public static <T extends Vehicle> EntityType<T> getVehicleType(String ID) {
         return (EntityType<T>) ENTITY_TYPES.get(ID);
     }
-//
-//    public static <T extends Vehicle> VehicleItem<T> getItem(String ID) {
-//        return (VehicleItem<T>) ITEMS.get(ID);
-//    }
 }
