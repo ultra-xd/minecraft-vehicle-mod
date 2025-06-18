@@ -15,18 +15,34 @@ import net.ultra.vehiclemod.vehicles.VehicleRenderer;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.client.CivicModel;
 import net.ultra.vehiclemod.vehicles.vehicle_types.truck.custom.Truck;
 
+/**
+ * creates a truck renderer class to handle all things truck rendering
+ */
 public class TruckRenderer extends VehicleRenderer<Truck> {
     public static final Identifier TEXTURE = Identifier.of(VehicleMod.MOD_ID, "textures/entity/truck.png");
     public final TruckModel MODEL;
 
+    //truck dimensions
     public static final float MODEL_LENGTH = 6.0f;
     public static final float MODEL_WIDTH = 6.0f;
     public static final float MODEL_HEIGHT = 6.0f;
+
+    /**
+     * truck renderer constructor
+     * @param context creates the truck entity renderer
+     */
     public TruckRenderer(EntityRendererFactory.Context context) {
         super(context);
         MODEL = new TruckModel(context.getPart(TruckModel.TRUCK));
     }
 
+    /**
+     * creates the 3d model of the truck
+     * @param entityRenderState determines how the entity is rotated
+     * @param ms how the model is transformed
+     * @param vcp how the vertices of the model is passed in
+     * @param light the brightness of the model
+     */
     public void render(
         VehicleRenderState entityRenderState,
         MatrixStack ms,

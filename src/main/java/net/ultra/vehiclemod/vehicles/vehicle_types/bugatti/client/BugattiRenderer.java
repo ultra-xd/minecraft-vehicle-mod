@@ -15,20 +15,35 @@ import net.ultra.vehiclemod.vehicles.vehicle_types.bugatti.custom.Bugatti;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.client.CivicModel;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.custom.Civic;
 
+/**
+ * creates a bugatti renderer class to handle all things bugatti rendering
+ */
 public class BugattiRenderer extends VehicleRenderer<Bugatti> {
     public static final Identifier TEXTURE = Identifier.of(VehicleMod.MOD_ID, "textures/entity/bugatti.png");
     public final BugattiModel MODEL;
 
+    //bugatti model dimensions
     public static final float MODEL_LENGTH = 8.0f;
     public static final float MODEL_WIDTH = 8.0f;
     public static final float MODEL_HEIGHT = 8.0f;
 
 
+    /**
+     * bugatti renderer constructor
+     * @param context creates the bugatti entity renderer
+     */
     public BugattiRenderer(EntityRendererFactory.Context context) {
         super(context);
         MODEL = new BugattiModel(context.getPart(BugattiModel.BUGATTI));
     }
 
+    /**
+     * creates the 3d model of the bugatti
+     * @param entityRenderState determines how the entity is rotated
+     * @param ms how the model is transformed
+     * @param vcp how the vertices of the model is passed in
+     * @param light the brightness of the model
+     */
     @Override
     public void render(
         VehicleRenderState entityRenderState,
