@@ -94,17 +94,4 @@ public class CivicModel extends EntityModel<EntityRenderState> {
 				.uv(8, 38).cuboid(-1.0F, -1.5F, 1.0F, 1.0F, 1.0F, 1.0F, new Dilation(0.0F)), ModelTransform.of(1.0F, -1.0F, 3.75F, 0.0F, 0.9163F, 0.0F));
 		return TexturedModelData.of(modelData, 44, 44);
 	}
-
-	/**
-	 * Gets individual model parts, given the name of the part.
-	 * @param name The name of the part.
-	 * @return The corresponding model part.
-	 */
-	@Override
-	public Optional<ModelPart> getPart(String name) {
-		return switch (name) {
-			case "root" -> Optional.of(root);
-			default -> Optional.empty();
-		};
-	}
 }

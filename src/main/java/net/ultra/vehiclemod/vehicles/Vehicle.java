@@ -11,6 +11,8 @@ import net.minecraft.item.Item;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
 import net.minecraft.util.PlayerInput;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
@@ -153,10 +155,10 @@ public abstract class Vehicle extends Entity {
      * Minecraft does not save which entities are the vehicle's components,
      * so NBT data and UUIDs are required to reconnect these entities upon reloading
      * the world.
-     * @param nbt The NBT data.
+     * @param readView The NBT data.
      */
     @Override
-    protected void readCustomDataFromNbt(NbtCompound nbt) {
+    protected void readCustomData(ReadView readView) {
         // Register that data comes from save file
         fromSavedData = true;
         SEATS_UUID.clear();
@@ -166,72 +168,68 @@ public abstract class Vehicle extends Entity {
         int i = 0;
         while (true) {
             // Add seat NBT to ArrayList of UUIDs
-            if (nbt.contains("seatMost" + i) && nbt.contains("seatLeast" + i)) {
-                Optional<Long> most = nbt.getLong("seatMost" + i);
-                Optional<Long> least = nbt.getLong("seatLeast" + i);
+            Optional<Long> most = readView.getOptionalLong("seatMost" + i);
+            Optional<Long> least = readView.getOptionalLong("seatLeast" + i);
 
-                if (most.isPresent() && least.isPresent()) {
-                    SEATS_UUID.add(new UUID(most.get(), least.get()));
-                    SEATS.add(null);
-                }
-
-                i++;
+            if (most.isPresent() && least.isPresent()) {
+                SEATS_UUID.add(new UUID(most.get(), least.get()));
+                SEATS.add(null);
             } else break;
+
+            i++;
+
         }
 
         // Add fuel tank UUID
-        if (nbt.contains("tankMost") && nbt.contains("tankLeast")) {
-            Optional<Long> most = nbt.getLong("tankMost");
-            Optional<Long> least = nbt.getLong("tankLeast");
+        Optional<Long> fuelTankMost = readView.getOptionalLong("tankMost");
+        Optional<Long> fuelTankLeast = readView.getOptionalLong("tankLeast");
 
-            if (most.isPresent() && least.isPresent()) {
-                tankUuid = new UUID(most.get(), least.get());
-            }
+        if (fuelTankMost.isPresent() && fuelTankLeast.isPresent()) {
+            tankUuid = new UUID(fuelTankMost.get(), fuelTankLeast.get());
         }
 
-        // Add trunk UUID
-        if (nbt.contains("trunkMost") && nbt.contains("trunkLeast")) {
-            Optional<Long> most = nbt.getLong("trunkMost");
-            Optional<Long> least = nbt.getLong("trunkLeast");
 
-            if (most.isPresent() && least.isPresent()) {
-                trunkUuid = new UUID(most.get(), least.get());
-            }
+        // Add trunk UUID
+        Optional<Long> trunkMost = readView.getOptionalLong("trunkMost");
+        Optional<Long> trunkLeast = readView.getOptionalLong("trunkLeast");
+
+        if (trunkMost.isPresent() && trunkLeast.isPresent()) {
+            trunkUuid = new UUID(trunkMost.get(), trunkLeast.get());
         }
     }
 
     /**
-     * Writes all child components UUID into NBT data.
+     * Writes all child components UUID into data.
      * Minecraft does not save which entities are the vehicle's components,
-     * so NBT data and UUIDs are required to reconnect these entities upon reloading
+     * so save data and UUIDs are required to reconnect these entities upon reloading
      * the world.
-     * @param nbt The NBT data.
+     * @param writeView The write view.
      */
     @Override
-    protected void writeCustomDataToNbt(NbtCompound nbt) {
+    protected void writeCustomData(WriteView writeView) {
         // Get UUID of all seats and write to NBT
         for (int i = 0; i < SEATS.size(); i++) {
             Seat seat = SEATS.get(i);
 
             if (seat != null) {
                 UUID uuid = seat.getUuid();
-                nbt.putLong("seatMost" + i, uuid.getMostSignificantBits());
-                nbt.putLong("seatLeast" + i, uuid.getLeastSignificantBits());
+                writeView.putLong("seatMost" + i, uuid.getMostSignificantBits());
+                writeView.putLong("seatLeast" + i, uuid.getLeastSignificantBits());
             }
         }
 
         // Write the fuel tank UUID to NBT
         if (tank != null && !tank.isRemoved()) {
             UUID uuid = tank.getUuid();
-            nbt.putLong("tankMost", uuid.getMostSignificantBits());
-            nbt.putLong("tankLeast", uuid.getLeastSignificantBits());
+            writeView.putLong("tankMost", uuid.getMostSignificantBits());
+            writeView.putLong("tankLeast", uuid.getLeastSignificantBits());
         }
 
         // Write the trunk UUID to NBT
         if (trunk != null && !trunk.isRemoved()) {
             UUID uuid = trunk.getUuid();
-            nbt.putLong("trunkMost", uuid.getMostSignificantBits());
-            nbt.putLong("trunkLeast", uuid.getLeastSignificantBits());
+            writeView.putLong("trunkMost", uuid.getMostSignificantBits());
+            writeView.putLong("trunkLeast", uuid.getLeastSignificantBits());
         }
     }
 

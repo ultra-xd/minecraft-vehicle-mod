@@ -15,6 +15,8 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.collection.DefaultedList;
@@ -61,23 +63,23 @@ public abstract class VehicleInventory extends VehicleComponent implements Inven
     /**
      * Updates location of the entity and the contents of the inventory
      * from NBT data when reloading world.
-     * @param nbt The NBT data.
+     * @param readView The NBT data.
      */
     @Override
-    public void readCustomDataFromNbt(NbtCompound nbt) {
-        super.readCustomDataFromNbt(nbt);
-        Inventories.readNbt(nbt, INVENTORY, getWorld().getRegistryManager());
+    public void readCustomData(ReadView readView) {
+        super.readCustomData(readView);
+        Inventories.readData(readView, INVENTORY);
     }
 
     /**
      * Writes location of the entity and the contents of the inventory
      * to NBT to be saved when leaving world.
-     * @param nbt The NBT data.
+     * @param writeView The NBT data.
      */
     @Override
-    public void writeCustomDataToNbt(NbtCompound nbt) {
-        super.writeCustomDataToNbt(nbt);
-        Inventories.writeNbt(nbt, INVENTORY, getWorld().getRegistryManager());
+    public void writeCustomData(WriteView writeView) {
+        super.writeCustomData(writeView);
+        Inventories.writeData(writeView, INVENTORY);
     }
 
     /**

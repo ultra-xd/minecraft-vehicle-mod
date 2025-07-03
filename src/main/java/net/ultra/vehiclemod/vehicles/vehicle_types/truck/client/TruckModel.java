@@ -100,17 +100,4 @@ public class TruckModel extends EntityModel<EntityRenderState> {
         ModelPartData cube_r11 = root.addChild("cube_r11", ModelPartBuilder.create().uv(0, 27).cuboid(-2.0F, -1.0F, 0.0F, 2.0F, 1.0F, 9.0F, new Dilation(0.0F)), ModelTransform.of(-10.0F, -8.0F, -4.5F, 0.0F, 0.0F, -0.2618F));
         return TexturedModelData.of(modelData, 76, 76);
     }
-
-    /**
-     * Gets individual model parts, given the name of the part.
-     * @param name The name of the part.
-     * @return The corresponding model part.
-     */
-    @Override
-    public Optional<ModelPart> getPart(String name) {
-        return switch (name) {
-            case "root" -> Optional.of(root);
-            default -> Optional.empty();
-        };
-    }
 }

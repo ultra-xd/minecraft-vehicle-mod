@@ -91,17 +91,4 @@ public class SoulModel extends EntityModel<EntityRenderState> {
 		ModelPartData cube_r16 = root.addChild("cube_r16", ModelPartBuilder.create().uv(18, 38).cuboid(-3.0F, -3.0F, -1.0F, 6.0F, 3.0F, 0.0F, new Dilation(0.0F)), ModelTransform.of(0.0F, -2.75F, -6.0F, -0.1309F, 0.0F, 0.0F));
 		return TexturedModelData.of(modelData, 60, 60);
 	}
-
-	/**
-	 * Gets individual model parts, given the name of the part.
-	 * @param name The name of the part.
-	 * @return The corresponding model part.
-	 */
-	@Override
-	public Optional<ModelPart> getPart(String name) {
-		return switch (name) {
-			case "root" -> Optional.of(root);
-			default -> Optional.empty();
-		};
-	}
 }

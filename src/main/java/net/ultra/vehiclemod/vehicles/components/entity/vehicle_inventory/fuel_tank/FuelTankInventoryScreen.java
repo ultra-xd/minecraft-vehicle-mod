@@ -1,5 +1,6 @@
 package net.ultra.vehiclemod.vehicles.components.entity.vehicle_inventory.fuel_tank;
 
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.render.RenderLayer;
@@ -48,7 +49,7 @@ public class FuelTankInventoryScreen extends HandledScreen<FuelTankScreenHandler
     protected void drawBackground(DrawContext context, float deltaTicks, int mouseX, int mouseY) {
         // Draw background
         context.drawTexture(
-            RenderLayer::getGuiTextured,
+            RenderPipelines.GUI_TEXTURED,
             TEXTURE,
             x,
             y,

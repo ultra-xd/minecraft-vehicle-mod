@@ -180,17 +180,4 @@ public class BugattiModel extends EntityModel<EntityRenderState> {
 		ModelPartData cube_r46 = root.addChild("cube_r46", ModelPartBuilder.create().uv(32, 24).cuboid(-1.0F, -1.0F, -1.0F, 1.0F, 1.0F, 2.0F, new Dilation(0.0F)), ModelTransform.of(-1.5F, -1.0F, -4.25F, 0.0F, -0.5672F, 0.0F));
 		return TexturedModelData.of(modelData, 44, 44);
 	}
-
-	/**
-	 * Gets individual model parts, given the name of the part.
-	 * @param name The name of the part.
-	 * @return The corresponding model part.
-	 */
-	@Override
-	public Optional<ModelPart> getPart(String name) {
-		return switch (name) {
-			case "root" -> Optional.of(root);
-			default -> Optional.empty();
-		};
-	}
 }

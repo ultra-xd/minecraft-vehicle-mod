@@ -2,6 +2,8 @@ package net.ultra.vehiclemod.vehicles.components.entity;
 
 import net.minecraft.entity.*;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.ultra.vehiclemod.vehicles.Vehicle;
@@ -53,52 +55,42 @@ public abstract class VehicleComponent extends Entity {
 
     /**
      * Reassigns parent and offset coordinates to parent upon reload.
-     * @param nbt The NBT data containing the UUID of the parent and offset.
+     * @param readView The data containing the UUID of the parent and offset.
      */
     @Override
-    protected void readCustomDataFromNbt(NbtCompound nbt) {
+    protected void readCustomData(ReadView readView) {
         // Find parent UUID
-        if (nbt.contains("parentMost") && nbt.contains("parentLeast")) {
-            Optional<Long> most = nbt.getLong("parentMost");
-            Optional<Long> least = nbt.getLong("parentLeast");
+        Optional<Long> parentMost = readView.getOptionalLong("parentMost");
+        Optional<Long> parentLeast = readView.getOptionalLong("parentLeast");
 
-            if (most.isPresent() && least.isPresent()) {
-                parentUuid = new UUID(most.get(), least.get());
-            }
+        if (parentMost.isPresent() && parentLeast.isPresent()) {
+            parentUuid = new UUID(parentMost.get(), parentLeast.get());
         }
 
         // Find offset NBT and reassign
-        if (
-            nbt.contains("offsetX") &&
-            nbt.contains("offsetY") &&
-            nbt.contains("offsetZ")
-        ) {
-            Optional<Double> x = nbt.getDouble("offsetX");
-            Optional<Double> y = nbt.getDouble("offsetY");
-            Optional<Double> z = nbt.getDouble("offsetZ");
+        double x = readView.getDouble("offsetX", 0d);
+        double y = readView.getDouble("offsetY", 0d);
+        double z = readView.getDouble("offsetZ", 0d);
 
-            if (x.isPresent() && y.isPresent() && z.isPresent()) {
-                offset = new Vec3d(x.get(), y.get(), z.get());
-            }
-        }
+        offset = new Vec3d(x, y, z);
     }
 
     /**
      * Saves parent UUID and offset when quitting world.
-     * @param nbt The NBT data containing the UUID of the parent and offset.
+     * @param writeView The data containing the UUID of the parent and offset.
      */
     @Override
-    protected void writeCustomDataToNbt(NbtCompound nbt) {
+    protected void writeCustomData(WriteView writeView) {
         // Add parent UUID
         if (parent != null) {
-            nbt.putLong("parentMost", parentUuid.getMostSignificantBits());
-            nbt.putLong("parentLeast", parentUuid.getLeastSignificantBits());
+            writeView.putLong("parentMost", parentUuid.getMostSignificantBits());
+            writeView.putLong("parentLeast", parentUuid.getLeastSignificantBits());
         }
 
         // Add offsets
-        nbt.putDouble("offsetX", offset.getX());
-        nbt.putDouble("offsetY", offset.getY());
-        nbt.putDouble("offsetZ", offset.getZ());
+        writeView.putDouble("offsetX", offset.getX());
+        writeView.putDouble("offsetY", offset.getY());
+        writeView.putDouble("offsetZ", offset.getZ());
     }
 
     /** Updates the vehicle component. */

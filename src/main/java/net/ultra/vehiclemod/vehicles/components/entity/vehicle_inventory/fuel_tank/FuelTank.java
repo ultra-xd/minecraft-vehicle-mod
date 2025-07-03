@@ -1,5 +1,6 @@
 package net.ultra.vehiclemod.vehicles.components.entity.vehicle_inventory.fuel_tank;
 
+import com.mojang.serialization.Codec;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.EntityType;
@@ -17,6 +18,8 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryEntryLookup;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import net.ultra.vehiclemod.vehicles.Vehicle;
@@ -65,37 +68,33 @@ public class FuelTank extends VehicleInventory {
     /**
      * Writes location of the entity, the contents of the inventory
      * and any allowed items to NBT to be saved when leaving world.
-     * @param nbt The NBT data.
+     * @param writeView The NBT data.
      */
     @Override
-    public void writeCustomDataToNbt(NbtCompound nbt) {
-        super.writeCustomDataToNbt(nbt);
+    public void writeCustomData(WriteView writeView) {
+        super.writeCustomData(writeView);
 
-        NbtList nbtList = new NbtList();
+        WriteView.ListAppender<String> list = writeView.getListAppender("itemsList", Codec.STRING);
 
         for (Item item: items) {
             Identifier identifier = Registries.ITEM.getId(item);
-            nbtList.add(NbtString.of(identifier.toString()));
+            list.add(identifier.toString());
         }
 
-        nbt.put("itemsList", nbtList);
+        if (list.isEmpty()) {
+            writeView.remove("itemsList");
+        }
     }
 
     @Override
-    public void readCustomDataFromNbt(NbtCompound nbt) {
-        super.readCustomDataFromNbt(nbt);
+    public void readCustomData(ReadView readView) {
+        super.readCustomData(readView);
 
-        if (!nbt.contains("itemsList")) return;
-
-        NbtList nbtList = nbt.getListOrEmpty("itemsList");
         ArrayList<Item> itemsList = new ArrayList<>();
-        for (NbtElement element: nbtList) {
-            Optional<String> itemId = element.asString();
-            if (itemId.isPresent()) {
-                Identifier identifier = Identifier.of(itemId.get());
-                Item item = Registries.ITEM.get(identifier);
-                itemsList.add(item);
-            }
+        for (String itemId: readView.getTypedListView("itemsList", Codec.STRING)) {
+            Identifier identifier = Identifier.of(itemId);
+            Item item = Registries.ITEM.get(identifier);
+            itemsList.add(item);
         }
 
         Item[] items = new Item[itemsList.size()];
