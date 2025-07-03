@@ -1,8 +1,12 @@
 package net.ultra.vehiclemod.vehicles.components.entity.seat;
 
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.client.option.Perspective;
 import net.minecraft.entity.*;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
+import net.minecraft.entity.data.TrackedData;
+import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
@@ -18,6 +22,13 @@ public class Seat extends VehicleComponent {
     public static final String ENTITY_ID = "vehicle_seat";
     public static final double SEAT_WIDTH = 1d;
     public static final double SEAT_HEIGHT = 1d;
+
+    private static final TrackedData<Boolean> HAS_PASSENGER = DataTracker.registerData(
+        Seat.class,
+        TrackedDataHandlerRegistry.BOOLEAN
+    );
+
+    private static boolean perspectiveChangeRegistered = false;
 
     /**
      * Initializes a vehicle seat.
@@ -38,7 +49,9 @@ public class Seat extends VehicleComponent {
 
     /** Seats don't require a data tracker so no data tracker builder required. */
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {}
+    protected void initDataTracker(DataTracker.Builder builder) {
+        builder.add(HAS_PASSENGER, false);
+    }
 
     /**
      * Ensure that entity does not take damage
@@ -107,6 +120,24 @@ public class Seat extends VehicleComponent {
         }
     }
 
+    @Override
+    protected void updatePassengerPosition(Entity passenger, PositionUpdater positionUpdater) {
+        super.updatePassengerPosition(passenger, positionUpdater);
+
+        dataTracker.set(HAS_PASSENGER, true);
+
+        passenger.setInvisible(true);
+    }
+
+    @Override
+    protected void removePassenger(Entity passenger) {
+        super.removePassenger(passenger);
+
+        dataTracker.set(HAS_PASSENGER, false);
+
+        passenger.setInvisible(false);
+    }
+
     /**
      * Gets the hitbox dimensions of the entity.
      * @param pose The pose of the entity, which does not matter since
@@ -148,7 +179,26 @@ public class Seat extends VehicleComponent {
                 dismountPosition.getZ(),
                 false
             );
-
         }
+    }
+
+    public static void registerPerspectiveChange() {
+        if (perspectiveChangeRegistered) {
+            throw new Error("Perspective already changed");
+        }
+
+        perspectiveChangeRegistered = true;
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player != null && client.player.hasVehicle()) {
+                Entity riding = client.player.getVehicle();
+
+                if (riding instanceof Seat) {
+                    if (client.options.getPerspective() == Perspective.THIRD_PERSON_BACK) return;
+
+                    client.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+                }
+            }
+        });
     }
 }

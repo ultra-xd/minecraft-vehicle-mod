@@ -1,8 +1,8 @@
-package net.ultra.vehiclemod;
+package net.ultra.vehiclemod.core;
 
 import net.fabricmc.api.ModInitializer;
 
-import net.ultra.vehiclemod.vehicles.VehicleRegisterer;
+import net.ultra.vehiclemod.vehicles.register.VehicleRegisterer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

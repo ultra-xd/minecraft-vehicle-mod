@@ -1,4 +1,4 @@
-package net.ultra.vehiclemod.vehicles.components.entity.fuel_tank;
+package net.ultra.vehiclemod.vehicles.components.entity.vehicle_inventory.fuel_tank;
 
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -7,7 +7,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
-import net.ultra.vehiclemod.vehicles.VehicleRegisterer;
+import net.ultra.vehiclemod.vehicles.register.VehicleRegisterer;
 import net.ultra.vehiclemod.vehicles.components.FilteredSlot;
 
 /** Screen handler for the fuel tank. */
@@ -102,20 +102,11 @@ public class FuelTankScreenHandler extends ScreenHandler {
         return itemStack;
     }
 
-    /**
-     * Determines if the player can use the screen.
-     * @param player The player trying to use the screen.
-     * @return True if can be used, false otherwise.
-     */
     @Override
     public boolean canUse(PlayerEntity player) {
         return inventory.canPlayerUse(player);
     }
 
-    /**
-     * Determines what happens when the fuel tank is closed (i.e close inventory)
-     * @param player The player closing.
-     */
     @Override
     public void onClosed(PlayerEntity player) {
         super.onClosed(player);

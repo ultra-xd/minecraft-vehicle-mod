@@ -6,6 +6,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.MovementType;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -15,9 +16,10 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.World;
-import net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.FuelTank;
+import net.ultra.vehiclemod.vehicles.components.entity.vehicle_inventory.fuel_tank.FuelTank;
 import net.ultra.vehiclemod.vehicles.components.entity.seat.Seat;
-import net.ultra.vehiclemod.vehicles.components.entity.trunk.Trunk;
+import net.ultra.vehiclemod.vehicles.components.entity.vehicle_inventory.trunk.Trunk;
+import net.ultra.vehiclemod.vehicles.register.VehicleRegisterer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,22 +27,34 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Creates a vehicle class that extends minecraft's entity class
+ * An entity that a player can control.
+ *
+ * Each vehicle has a maximum speed and brake power, which controls how fast the vehicle
+ * can go. If the player is in the driver seat, the player can hold the forwards key to
+ * accelerate the vehicle forwards. Likewise, the player can also hold the backwards key
+ * to accelerate the vehicle backwards.
+ *
+ * The player in the driver seat can steer the vehicle by holding the left and right movement
+ * keys.
+ *
+ * Each vehicle also has a fuel tank. If the driver seat is occupied, the tank will by default
+ * consume fuel.
  */
 public abstract class Vehicle extends Entity {
-    //sets the car's tick speed to 20 ticks per second
+    // Sets the car's tick speed to 20 ticks per second, the default Minecraft tick speed
     private static final double TPS = 20;
 
     // Vehicle physics properties
-    public final double MAX_SPEED;
-    protected double speed = 0;
-    public final double BRAKE_POWER;
+    public final double MAX_SPEED; // Max speed in blocks / tick
+    protected double speed = 0; // Speed in blocks / tick
+    public final double BRAKE_POWER; // Acceleration in blocks / tick^2
     private static final double COASTING_PROPORTIONALITY = 0.2; // coasting slowing down is proportional to brake strength
     protected final double ACCELERATION_TICKS; // how many ticks it takes to accelerate to full speed
     private static final double GRAVITY_ACCELERATION_PER_TICK = -0.08; // this is the default gravity acceleration in Minecraft
-    protected static final int DEFAULT_ACCELERATION_TICKS = 100; // how long it takes for vehicle to reach max speed
+    protected static final int DEFAULT_ACCELERATION_LENGTH = 5; // how long it takes for vehicle to reach max speed, in seconds
     private boolean noControl = true; // determines if a player is controlling the vehicle in that tick
     private static final double STEERING_SENSITIVITY = 0.05;
+    private Vec3d previousPos = null;
 
     // Explosion properties
     public final double MAX_EXPLOSION_POWER;
@@ -59,16 +73,18 @@ public abstract class Vehicle extends Entity {
     protected UUID tankUuid = null;
     protected Trunk trunk = null;
     protected UUID trunkUuid = null;
+
+    // Track if car is initialized from saved NBT data
     private boolean fromSavedData = false;
 
     /**
-     * Creates new vehicle.
-     * @param type the type of vehicle
-     * @param world the world that the vehicle is in
-     * @param MAX_SPEED max speed the vehicle can go
-     * @param BRAKE_POWER the brake power of the car
-     * @param MAX_EXPLOSION_POWER the max explosion power
-     * @param FUEL_CONSUMPTION_RATE the fuel consumption rate
+     * Creates a new vehicle.
+     * @param type The entity type of vehicle.
+     * @param world The world that the vehicle is in.
+     * @param MAX_SPEED Max speed the vehicle can travel forwards, in blocks / second.
+     * @param BRAKE_POWER The brake power of the car, in blocks / second ^ 2.
+     * @param MAX_EXPLOSION_POWER The max explosion power.
+     * @param FUEL_CONSUMPTION_RATE The fuel consumption rate, in items / second.
      */
     protected Vehicle(
         EntityType<? extends Vehicle> type,
@@ -84,18 +100,18 @@ public abstract class Vehicle extends Entity {
         this.BRAKE_POWER = BRAKE_POWER / Math.pow(TPS, 2); // blocks per tick^2
         this.MAX_EXPLOSION_POWER = MAX_EXPLOSION_POWER;
         this.FUEL_CONSUMPTION_RATE = FUEL_CONSUMPTION_RATE * TPS;
-        ACCELERATION_TICKS = DEFAULT_ACCELERATION_TICKS;
+        ACCELERATION_TICKS = DEFAULT_ACCELERATION_LENGTH * TPS;
     }
 
     /**
-     * This constructor is used only for the bugatti due to the faster acceleration perk
-      * @param type the type of vehicle
-     * @param world the world that the vehicle is in
-     * @param MAX_SPEED max speed the vehicle can go
-     * @param BRAKE_POWER the brake power of the car
-     * @param MAX_EXPLOSION_POWER the max explosion power
-     * @param ACCELERATION_TICKS the custom acceleration
-     * @param FUEL_CONSUMPTION_RATE the fuel consumption rate
+     * Creates a new vehicle. Can specify acceleration.
+     * @param type The entity type of vehicle.
+     * @param world The world that the vehicle is in.
+     * @param MAX_SPEED Max speed the vehicle can travel forwards, in blocks / second.
+     * @param BRAKE_POWER The brake power of the car, in blocks / second ^ 2.
+     * @param MAX_EXPLOSION_POWER The max explosion power.
+     * @param ACCELERATION_LENGTH How fast the vehicle accelerates to max speed from rest, in seconds.
+     * @param FUEL_CONSUMPTION_RATE The fuel consumption rate, in items / second.
      */
     protected Vehicle(
         EntityType<? extends Vehicle> type,
@@ -103,7 +119,7 @@ public abstract class Vehicle extends Entity {
         double MAX_SPEED,
         double BRAKE_POWER,
         double MAX_EXPLOSION_POWER,
-        double ACCELERATION_TICKS,
+        double ACCELERATION_LENGTH,
         double FUEL_CONSUMPTION_RATE
     ) {
         super(type, world);
@@ -111,19 +127,21 @@ public abstract class Vehicle extends Entity {
         this.MAX_SPEED = MAX_SPEED / TPS;
         this.BRAKE_POWER = BRAKE_POWER / Math.pow(TPS, 2);
         this.MAX_EXPLOSION_POWER = MAX_EXPLOSION_POWER;
-        this.ACCELERATION_TICKS = ACCELERATION_TICKS;
+        this.ACCELERATION_TICKS = ACCELERATION_LENGTH * TPS;
         this.FUEL_CONSUMPTION_RATE = FUEL_CONSUMPTION_RATE * TPS;
     }
 
     /**
-     * this method is only here because this class extends the entity class, and this method is
-     * abstract which requires it to be overridden
+     * This method is only here because this class extends the entity class, and this method is
+     * abstract which requires it to be overridden. However, no data tracking is required for
+     * this entity, hence it being empty.
      */
     @Override
     protected void initDataTracker(DataTracker.Builder builder) {}
 
     /**
-     * this method prevents the car from taking damage
+     * Prevents the car from taking damage.
+     * @return Always false.
      */
     @Override
     public boolean damage(ServerWorld world, DamageSource source, float amount) {
@@ -144,6 +162,7 @@ public abstract class Vehicle extends Entity {
         SEATS_UUID.clear();
         SEATS.clear();
 
+        // Find all seats
         int i = 0;
         while (true) {
             // Add seat NBT to ArrayList of UUIDs
@@ -217,12 +236,11 @@ public abstract class Vehicle extends Entity {
     }
 
 
-    /**
-     * this method is used to update the vehicles both on server-side and client-side
-     * also handles how vehicles interact with objects
-     */
+    /** Updates the vehicle and handles any physics. */
     @Override
     public void tick() {
+        previousPos = getPos();
+
         super.tick();
 
         if (!getWorld().isClient) {
@@ -239,7 +257,7 @@ public abstract class Vehicle extends Entity {
 
             // Handle dealing damage to living entities
             List<Entity> collidedEntities = getCollidingLivingEntities();
-            for (Entity entity : collidedEntities) {
+            for (Entity entity: collidedEntities) {
                 if (entity instanceof LivingEntity livingEntity) {
                     // Only damage entity if vehicle is beyond a certain speed
                     if (Math.abs(speed) > 0.15f) {
@@ -248,11 +266,11 @@ public abstract class Vehicle extends Entity {
                         Vec3d direction = getVelocity().normalize();
 
                         /*
-                        * Living entity must take the negative of the velocity since
-                        * the inputs calculate the direction vector from the entity
-                        * to the damage source, but we want the knockback in the
-                        * direction of the velocity vector.
-                        */
+                         * Living entity must take the negative of the velocity since
+                         * the takeKnockback method calculates the direction vector from the entity
+                         * to the damage source, but we want the knockback in the
+                         * direction of the velocity vector.
+                         */
                         livingEntity.takeKnockback(
                             Math.abs(speed),
                             -direction.getX(),
@@ -289,25 +307,22 @@ public abstract class Vehicle extends Entity {
 
             noControl = true;
             // Handle player input & consume fuel if someone is in driver seat
-            if (!SEATS.isEmpty()) {
-                Seat driver = SEATS.getFirst();
-                if (driver != null) {
-                    if (driver.hasPassengers() && driver.getFirstPassenger() instanceof ServerPlayerEntity player) {
-                        handlePlayerInput(player);
+            if (
+                driverSeatIsOccupied() &&
+                SEATS.getFirst().getFirstPassenger() instanceof ServerPlayerEntity player
+            ) {
+                handlePlayerInput(player);
 
-                        fuelTicks++;
-                        if (fuelTicks >= FUEL_CONSUMPTION_RATE) {
-                            fuelTicks = 0;
-                            tank.consumeFuel();
-                        }
-                    } else noControl = true;
-
-                } else noControl = true;
-
+                // Consume fuel
+                fuelTicks++;
+                if (fuelTicks >= FUEL_CONSUMPTION_RATE) {
+                    fuelTicks = 0;
+                    tank.consumeFuel();
+                }
             }
 
             // Explode if in contact with lava
-            if (isInLava()) {
+            if (isInLava() && explodesOnLavaContact()) {
                 explode((float) MAX_EXPLOSION_POWER);
             }
 
@@ -331,27 +346,19 @@ public abstract class Vehicle extends Entity {
             double yaw = Math.toRadians(getYaw());
 
             setVelocity(new Vec3d(
-                    -Math.sin(yaw) * speed,
-                    getVelocity().getY(),
-                    Math.cos(yaw) * speed
+                -Math.sin(yaw) * speed,
+                getVelocity().getY(),
+                Math.cos(yaw) * speed
             ));
         }
 
         // Movement must be updated on the server and client
         move(MovementType.SELF, getVelocity());
-
-        // Update position of components on server and client
-        for (Seat seat : SEATS) {
-            if (seat != null && !seat.isRemoved()) seat.updatePosition();
-        }
-
-        if (tank != null && !tank.isRemoved()) tank.updatePosition();
-        if (trunk != null && !trunk.isRemoved()) trunk.updatePosition();
     }
 
     /**
-     * handles user input
-     * @param player the player entity
+     * Handles user input and updates car velocity accordingly.
+     * @param player The player entity controlling the car.
      */
     private void handlePlayerInput(ServerPlayerEntity player) {
         PlayerInput input = player.getPlayerInput();
@@ -391,7 +398,7 @@ public abstract class Vehicle extends Entity {
         velocityDirty = true;
     }
 
-    /** Slows vehicle down while coasting */
+    /** Slows vehicle down while coasting. */
     private void adjustVelocityWhileCoasting() {
         if (speed >= 0) {
             speed = Math.max(speed - BRAKE_POWER * COASTING_PROPORTIONALITY, 0);
@@ -422,10 +429,8 @@ public abstract class Vehicle extends Entity {
      * @param offsetX The offset of the seat in the X direction.
      * @param offsetY The offset of the seat in the Y direction.
      * @param offsetZ The offset of the seat in the Z direction.
-     * @param seatId  The ith seat added to the vehicle, zero-indexed. Seat IDs
-     *                should always be assigned in ascending order.
      */
-    protected void addSeat(double offsetX, double offsetY, double offsetZ, int seatId) {
+    protected void addSeat(double offsetX, double offsetY, double offsetZ) {
         Seat seat = new Seat(
             VehicleRegisterer.SEAT_ENTITY_TYPE,
             this,
@@ -439,11 +444,11 @@ public abstract class Vehicle extends Entity {
     }
 
     /**
-     * Creates the fuel tank for the vehicle, including its UUID
-     * @param offsetX the x coordinate of the fuel tank relative to the vehicle's coordinate
-     * @param offsetY the y coordinate of the fuel tank relative to the vehicle's coordinate
-     * @param offsetZ the z coordinate of the fuel tank relative to the vehicle's coordinate
-     * @param items the items that are allowed inside the fuel tank
+     * Creates the fuel tank for the vehicle, including its UUID.
+     * @param offsetX The offset of the fuel tank in the X direction.
+     * @param offsetY The offset of the fuel tank in the Y direction.
+     * @param offsetZ The offset of the fuel tank in the Z direction.
+     * @param items The items that are allowed inside the fuel tank.
      */
     protected void setFuelTank(double offsetX, double offsetY, double offsetZ, Item[] items) {
         tank = new FuelTank(
@@ -459,10 +464,10 @@ public abstract class Vehicle extends Entity {
     }
 
     /**
-     * Creates the trunk for the vehicle, including its UUID
-     * @param offsetX the x coordinate of the trunk relative to the vehicle's coordinate
-     * @param offsetY the y coordinate of the trunk relative to the vehicle's coordinate
-     * @param offsetZ the z coordinate of the trunk relative to the vehicle's coordinate
+     * Creates the trunk for the vehicle, including its UUID.
+     * @param offsetX The offset of the trunk in the X direction.
+     * @param offsetY The offset of the trunk in the Y direction.
+     * @param offsetZ The offset of the trunk in the Z direction.
      */
     protected void setTrunk(double offsetX, double offsetY, double offsetZ) {
         trunk = new Trunk(
@@ -477,7 +482,7 @@ public abstract class Vehicle extends Entity {
     }
 
     /**
-     * Removes all entities connected to the vehicle when it despawns
+     * Removes all entities connected to the vehicle when it despawns.
      * @param reason The reason the vehicle is being removed
      */
     @Override
@@ -485,20 +490,20 @@ public abstract class Vehicle extends Entity {
         super.remove(reason);
 
         // Remove seats
-        for (Seat seat : SEATS) {
+        for (Seat seat: SEATS) {
             if (seat != null && !seat.isRemoved()) {
-                seat.remove(RemovalReason.DISCARDED);
+                seat.remove(reason);
             }
         }
 
         // Remove fuel tank
         if (tank != null && !tank.isRemoved()) {
-            tank.remove(RemovalReason.DISCARDED);
+            tank.remove(reason);
         }
 
         // Remove trunk
         if (trunk != null && !trunk.isRemoved()) {
-            trunk.remove(RemovalReason.DISCARDED);
+            trunk.remove(reason);
         }
     }
 
@@ -521,9 +526,9 @@ public abstract class Vehicle extends Entity {
             // Reconnect all seats
             for (UUID uuid: SEATS_UUID) {
                 for (Seat other: world.getEntitiesByClass(
-                        Seat.class,
-                        getBoundingBox().expand(16),
-                        e -> true
+                    Seat.class,
+                    getBoundingBox().expand(16),
+                    e -> true
                 )) {
                     if (other.getUuid().equals(uuid)) SEATS.add(other);
                 }
@@ -531,18 +536,18 @@ public abstract class Vehicle extends Entity {
 
             // Reconnect fuel tank
             for (FuelTank other: world.getEntitiesByClass(
-                    FuelTank.class,
-                    getBoundingBox().expand(16),
-                    e -> true
+                FuelTank.class,
+                getBoundingBox().expand(16),
+                e -> true
             )) {
                 if (other.getUuid().equals(tankUuid)) tank = other;
             }
 
             // Reconnect trunk
             for (Trunk other: world.getEntitiesByClass(
-                    Trunk.class,
-                    getBoundingBox().expand(16),
-                    e -> true
+                Trunk.class,
+                getBoundingBox().expand(16),
+                e -> true
             )) {
                 if (other.getUuid().equals(trunkUuid)) trunk = other;
             }
@@ -550,25 +555,17 @@ public abstract class Vehicle extends Entity {
     }
 
     /**
-     * getter for the the max height the vehicle can drive up
-     * @return the max height the vehicle is able to drive up
-     */
-    @Override
-    public float getStepHeight() {
-        return 1.0f;
-    }
-
-    /**
-     * A getter for the vehicle's current max speed based on it's environment
-     * @return the max speed the vehicle can go
+     * Determines the vehicle's max speed based on its environment (for example, water can slow the vehicle down)
+     * @return The max speed the vehicle can go
      */
     public double getCurrentMaxSpeed() {
+        if (resistsWater()) return MAX_SPEED;
         return isInFluid() ? MAX_SPEED / 2: MAX_SPEED;
     }
 
     /**
-     * creates an explosion and deletes the vehicle
-     * @param power the explosion power that the vehicle has
+     * Creates an explosion and deletes the vehicle.
+     * @param power The explosion power.
      */
     public void explode(float power) {
         World world = getWorld();
@@ -587,16 +584,14 @@ public abstract class Vehicle extends Entity {
         }
     }
 
-    /**
-     * Determines the explosion power depending on the vehicle's current speed
-     */
+    /** Explodes the vehicle proportionally to its speed. */
     public void explodeProportionalToSpeed() {
         explode((float) (Math.abs(speed) / MAX_SPEED * MAX_EXPLOSION_POWER));
     }
 
     /**
-     * checks if the vehicle is able to climb the blocks in front of it & is going fast enough
-     * @return True if vehicle should explode, false otherwise
+     * Checks if the vehicle is able to climb the blocks in front of it and is going fast enough.
+     * @return True if vehicle should explode, false otherwise.
      */
     private boolean shouldExplode() {
         // Don't explode if too slow
@@ -607,7 +602,7 @@ public abstract class Vehicle extends Entity {
 
         Box futureBox = getBoundingBox().offset(direction.getX(), 1.5, direction.getZ());
 
-        for (VoxelShape shape : getWorld().getBlockCollisions(this, futureBox)) {
+        for (VoxelShape shape: getWorld().getBlockCollisions(this, futureBox)) {
             if (!shape.isEmpty()) return true;
         }
 
@@ -615,9 +610,8 @@ public abstract class Vehicle extends Entity {
     }
 
     /**
-     * Determines which entities should take damage or not
-     * loops through all nearby entities and filters out the entities that are in the vehicle and non-living entities
-     * @return true if the entity is a living entity, false if it isn't
+     * Determines all living entities colliding with the vehicle.
+     * @return List of all entities that are living entities colliding with the entity.
      */
     private List<Entity> getCollidingLivingEntities() {
         return getWorld().getOtherEntities(
@@ -625,7 +619,7 @@ public abstract class Vehicle extends Entity {
             getBoundingBox(),
             entity -> {
                 // Filter out all passengers
-                for (Seat seat : SEATS) {
+                for (Seat seat: SEATS) {
                     if (seat != null && seat.getFirstPassenger() == entity) {
                         return false;
                     }
@@ -637,8 +631,8 @@ public abstract class Vehicle extends Entity {
     }
 
     /**
-     * loops through all entities and looks for other vehicle entities
-     * @return true if it is a vehicle, false if it isn't
+     * Determines all vehicle entities colliding with the vehicle.
+     * @return List of all entities that are vehicles colliding with the entity.
      */
     private List<Entity> getCollidingVehicles() {
         return getWorld().getOtherEntities(
@@ -649,10 +643,56 @@ public abstract class Vehicle extends Entity {
     }
 
     /**
+     * Determines if there is a player entity on the driver seat.
+     * The driver seat is always the first seat added to the list of seats.
+     * @return True if the driver seat is occupied, false otherwise.
+     */
+    public boolean driverSeatIsOccupied() {
+        return (
+            !SEATS.isEmpty() &&
+            SEATS.getFirst() != null &&
+            SEATS.getFirst().getFirstPassenger() instanceof PlayerEntity
+        );
+    }
+
+    /**
      * Vehicles explode if they encounter a wall in front of them larger than 2 blocks.
      * This method returns the distance the vehicle looks forward to check for walls.
      *
      * @return The distance the vehicle looks forward to check for walls.
      */
     protected abstract float getExplosionLookForwardDistance();
+
+    /**
+     * Determines if the vehicle should slow down if in contact with water.
+     * By default, this value is false. Subclasses should override this if the
+     * vehicle should not slow down in water.
+     * @return True if resists water, false otherwise.
+     */
+    public boolean resistsWater() {
+        return false;
+    }
+
+    /**
+     * Determines if the vehicle should explode if in contact with lava.
+     * By default, this value is true. Subclasses should override this if the
+     * vehicle should not explode in lava.
+     * @return True if explodes in lava, false otherwise.
+     */
+    public boolean explodesOnLavaContact() {
+        return true;
+    }
+
+    /**
+     * The maximum height the vehicle can drive up. By default, this value is 1 block.
+     * @return The max height the vehicle is able to drive up.
+     */
+    @Override
+    public float getStepHeight() {
+        return 1.0f;
+    }
+
+    public Vec3d getPreviousPos() {
+        return previousPos;
+    }
 }

@@ -1,11 +1,14 @@
 {
-	"required": true,
-	"package": "net.ultra.vehiclemod.mixin",
-	"compatibilityLevel": "JAVA_21",
-	"mixins": [
-		"ExampleMixin"
-	],
-	"injectors": {
-		"defaultRequire": 1
-	}
+  "required": true,
+  "package": "net.ultra.vehiclemod.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "EntityRenderDispatcherMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "EntityRenderDispatcherMixin"
+  ]
 }

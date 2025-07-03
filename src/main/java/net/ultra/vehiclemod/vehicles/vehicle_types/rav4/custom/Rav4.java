@@ -6,63 +6,49 @@ import net.minecraft.item.Items;
 import net.minecraft.world.World;
 import net.ultra.vehiclemod.vehicles.Vehicle;
 
-/**
- * Creates a Rav4 class that extends the Vehicle class
- */
+/** A Rav 4 Vehicle. It is hybrid, so it accepts redstone and coal as fuel. */
 public class Rav4 extends Vehicle {
-    //rav4 ids
     public static final String ITEM_ID = "rav4_spawn";
     public static final String ENTITY_ID = "rav4";
+    public static final float VEHICLE_HITBOX_WIDTH = 4.0f;
+    public static final float VEHICLE_HITBOX_HEIGHT = 4.0f;
 
     /**
-     * rav4 constructor
-     * @param type the type of vehicle (Rav4)
-     * @param world the world that this vehicle is in
+     * Initializes a Rav 4 entity.
+     * @param type The entity type of vehicle (Rav 4).
+     * @param world The world that this vehicle is in.
      */
     public Rav4(EntityType<? extends Vehicle> type, World world) {
         super(
-                type,
-                world,
-                27,
-                7,
-                50,
-                10
+            type,
+            world,
+            27,
+            7,
+            50,
+            10
         );
     }
 
-    /**
-     * creates the seats
-     */
     @Override
     protected void createSeats() {
-        addSeat(-0.5, 0.5, 0.5, 0);
-        addSeat(0.5, 0.5, 0.5, 1);
-        addSeat(-0.5, 0.5, -0.5, 2);
-        addSeat(0.5, 0.5, -0.5, 3);
+        addSeat(-0.5, 0.5, 0.5);
+        addSeat(0.5, 0.5, 0.5);
+        addSeat(-0.5, 0.5, -0.5);
+        addSeat(0.5, 0.5, -0.5);
     }
 
-    /**
-     * creates the fuel tank and determines what items can be placed inside
-     */
     @Override
     protected void createFuelTank() {
         setFuelTank(-1.5, 0.5, -1.5, new Item[] {Items.COAL, Items.REDSTONE});
     }
 
-    /**
-     * creates the trunk
-     */
     @Override
     protected void createTrunk() {
         setTrunk(0, 0.5, -2);
     }
 
-    /**
-     * a getter for how far a wall should be to be considered colliding with the Rav4
-     * @return the minimum distance a wall should be in front of the vehicle to not collide
-     */
     @Override
     protected float getExplosionLookForwardDistance() {
-        return 2.2f;
+        return 1.2f;
     }
 }

@@ -5,7 +5,7 @@ import net.minecraft.client.render.entity.model.EntityModel;
 import net.minecraft.client.render.entity.model.EntityModelLayer;
 import net.minecraft.client.render.entity.state.EntityRenderState;
 import net.minecraft.util.Identifier;
-import net.ultra.vehiclemod.VehicleMod;
+import net.ultra.vehiclemod.core.VehicleMod;
 
 import java.util.Optional;
 /** A KIA Soul model to render into the world, represented using Minecraft's standard entity modelling data. */

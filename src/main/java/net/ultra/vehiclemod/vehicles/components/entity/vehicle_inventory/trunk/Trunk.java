@@ -1,4 +1,4 @@
-package net.ultra.vehiclemod.vehicles.components.entity.trunk;
+package net.ultra.vehiclemod.vehicles.components.entity.vehicle_inventory.trunk;
 
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.entity.EntityPose;
@@ -9,7 +9,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.world.World;
 import net.ultra.vehiclemod.vehicles.Vehicle;
-import net.ultra.vehiclemod.vehicles.components.entity.abstract_vehicle_inventory.VehicleInventory;
+import net.ultra.vehiclemod.vehicles.components.entity.vehicle_inventory.VehicleInventory;
 import org.jetbrains.annotations.Nullable;
 
 public class Trunk extends VehicleInventory {

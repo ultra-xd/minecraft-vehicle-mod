@@ -13,6 +13,8 @@ public class Truck extends Vehicle {
     //Truck ids
     public static final String ITEM_ID = "truck_spawn";
     public static final String ENTITY_ID = "truck";
+    public static final float VEHICLE_HITBOX_WIDTH = 5.0f;
+    public static final float VEHICLE_HITBOX_HEIGHT = 4.0f;
 
     /**
      * Constructor for the truck that passes in its stats
@@ -35,8 +37,8 @@ public class Truck extends Vehicle {
      */
     @Override
     protected void createSeats() {
-        addSeat(0.5, 0.5, 2, 0);
-        addSeat(-0.5, 0.5, 2, 0);
+        addSeat(0.5, 0.5, 2);
+        addSeat(-0.5, 0.5, 2);
     }
 
     /**
@@ -61,6 +63,6 @@ public class Truck extends Vehicle {
      */
     @Override
     protected float getExplosionLookForwardDistance() {
-        return 4;
+        return 1.2f;
     }
 }

@@ -1,4 +1,4 @@
-package net.ultra.vehiclemod.vehicles.components.entity.abstract_vehicle_inventory;
+package net.ultra.vehiclemod.vehicles.components.entity.vehicle_inventory;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityDimensions;

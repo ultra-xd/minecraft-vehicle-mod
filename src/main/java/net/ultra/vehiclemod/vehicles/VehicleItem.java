@@ -11,11 +11,13 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.world.event.GameEvent;
+import net.ultra.vehiclemod.vehicles.register.VehicleRegisterer;
+
 /** Vehicle item that can place a vehicle. */
 public class VehicleItem<T extends Vehicle> extends Item {
     // Entity creator: creates vehicles
-    private EntityType.EntityFactory<T> FACTORY = null;
-    private String ENTITY_ID = null;
+    private EntityType.EntityFactory<T> factory = null;
+    private String entityId = null;
 
     /**
      * Initializes new vehicle item.
@@ -34,6 +36,8 @@ public class VehicleItem<T extends Vehicle> extends Item {
      */
     @Override
     public ActionResult use(World world, PlayerEntity player, Hand hand) {
+        assert factory != null && entityId != null;
+
         // Don't place entity on client side
         if (world.isClient) {
             return ActionResult.SUCCESS;
@@ -49,8 +53,8 @@ public class VehicleItem<T extends Vehicle> extends Item {
         }
 
         // Create entity
-        T entity = FACTORY.create(
-            VehicleRegisterer.getVehicleType(ENTITY_ID),
+        T entity = factory.create(
+            VehicleRegisterer.getVehicleType(entityId),
             world
         );
 
@@ -88,7 +92,7 @@ public class VehicleItem<T extends Vehicle> extends Item {
      * @return Item with new vehicle factory.
      */
     public VehicleItem<T> factory(EntityType.EntityFactory<T> factory) {
-        this.FACTORY = factory;
+        this.factory = factory;
         return this;
     }
 
@@ -98,7 +102,7 @@ public class VehicleItem<T extends Vehicle> extends Item {
      * @return Item with new entity ID.
      */
     public VehicleItem<T> entityId(String entityId) {
-        this.ENTITY_ID = entityId;
+        this.entityId = entityId;
         return this;
     }
 }

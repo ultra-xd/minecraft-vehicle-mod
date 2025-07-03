@@ -1,9 +1,6 @@
 package net.ultra.vehiclemod.vehicles.components.entity;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityDimensions;
-import net.minecraft.entity.EntityPose;
-import net.minecraft.entity.EntityType;
+import net.minecraft.entity.*;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -11,6 +8,7 @@ import net.ultra.vehiclemod.vehicles.Vehicle;
 
 import java.util.Optional;
 import java.util.UUID;
+
 /** A vehicle component follows around its vehicle constantly. */
 public abstract class VehicleComponent extends Entity {
 
@@ -119,9 +117,11 @@ public abstract class VehicleComponent extends Entity {
                 }
             }
         }
+
+        updatePosition();
     }
 
-    /** Updates position of vehicle component relative to vehicle. */
+    /** Updates position of vehicle component relative to vehicle on the server. */
     public void updatePosition() {
         if (parent == null || parent.isRemoved()) return;
 
@@ -131,9 +131,9 @@ public abstract class VehicleComponent extends Entity {
 
         // Use rotation matrix to calculate new position based on parent's yaw
         Vec3d newPos = new Vec3d(
-                offset.getX() * Math.cos(parentYaw) - offset.getZ() * Math.sin(parentYaw) + parentPos.getX(),
-                offset.getY() + parent.getY(),
-                offset.getX() * Math.sin(parentYaw) + offset.getZ() * Math.cos(parentYaw) + parentPos.getZ()
+            offset.getX() * Math.cos(parentYaw) - offset.getZ() * Math.sin(parentYaw) + parentPos.getX(),
+            offset.getY() + parent.getY(),
+            offset.getX() * Math.sin(parentYaw) + offset.getZ() * Math.cos(parentYaw) + parentPos.getZ()
         );
 
         // Update hitbox

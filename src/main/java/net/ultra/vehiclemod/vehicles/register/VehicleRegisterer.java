@@ -1,12 +1,6 @@
-package net.ultra.vehiclemod.vehicles;
+package net.ultra.vehiclemod.vehicles.register;
 
-import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.minecraft.client.gui.screen.ingame.HandledScreens;
-import net.minecraft.client.render.entity.EntityRendererFactory;
-import net.minecraft.client.render.entity.model.EntityModelLayer;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.inventory.SimpleInventory;
@@ -20,35 +14,23 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.resource.featuretoggle.FeatureFlags;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Identifier;
-import net.ultra.vehiclemod.VehicleMod;
-import net.ultra.vehiclemod.vehicles.components.entity.NoOpRenderer;
-import net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.FuelTank;
-import net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.FuelTankScreenHandler;
-import net.ultra.vehiclemod.vehicles.components.entity.fuel_tank.FuelTankInventoryScreen;
+import net.ultra.vehiclemod.core.VehicleMod;
+import net.ultra.vehiclemod.vehicles.Vehicle;
+import net.ultra.vehiclemod.vehicles.VehicleItem;
+import net.ultra.vehiclemod.vehicles.components.entity.vehicle_inventory.fuel_tank.FuelTank;
+import net.ultra.vehiclemod.vehicles.components.entity.vehicle_inventory.fuel_tank.FuelTankScreenHandler;
 import net.ultra.vehiclemod.vehicles.components.entity.seat.Seat;
-import net.ultra.vehiclemod.vehicles.components.entity.trunk.Trunk;
-import net.ultra.vehiclemod.vehicles.components.entity.trunk.TrunkInventoryScreen;
-import net.ultra.vehiclemod.vehicles.components.entity.trunk.TrunkScreenHandler;
-import net.ultra.vehiclemod.vehicles.vehicle_types.bugatti.client.BugattiModel;
+import net.ultra.vehiclemod.vehicles.components.entity.vehicle_inventory.trunk.Trunk;
+import net.ultra.vehiclemod.vehicles.components.entity.vehicle_inventory.trunk.TrunkScreenHandler;
 import net.ultra.vehiclemod.vehicles.vehicle_types.bugatti.custom.Bugatti;
-import net.ultra.vehiclemod.vehicles.vehicle_types.civic.client.CivicModel;
-import net.ultra.vehiclemod.vehicles.vehicle_types.civic.client.CivicRenderer;
 import net.ultra.vehiclemod.vehicles.vehicle_types.civic.custom.Civic;
-import net.ultra.vehiclemod.vehicles.vehicle_types.tesla.client.TeslaModel;
-import net.ultra.vehiclemod.vehicles.vehicle_types.tesla.client.TeslaRenderer;
 import net.ultra.vehiclemod.vehicles.vehicle_types.tesla.custom.Tesla;
-import net.ultra.vehiclemod.vehicles.vehicle_types.truck.client.TruckModel;
-import net.ultra.vehiclemod.vehicles.vehicle_types.truck.client.TruckRenderer;
 import net.ultra.vehiclemod.vehicles.vehicle_types.truck.custom.Truck;
-import net.ultra.vehiclemod.vehicles.vehicle_types.rav4.client.Rav4Model;
 import net.ultra.vehiclemod.vehicles.vehicle_types.rav4.custom.Rav4;
-import net.ultra.vehiclemod.vehicles.vehicle_types.rav4.client.Rav4Renderer;
-import net.ultra.vehiclemod.vehicles.vehicle_types.bugatti.client.BugattiRenderer;
-import net.ultra.vehiclemod.vehicles.vehicle_types.soul.client.SoulModel;
 import net.ultra.vehiclemod.vehicles.vehicle_types.soul.custom.Soul;
-import net.ultra.vehiclemod.vehicles.vehicle_types.soul.client.SoulRenderer;
+
 import java.util.HashMap;
-/** Registers all entities, items, renderers, screen handlers, and screens. */
+/** Registers all objects on server side, such as entities, items and screen handlers. */
 public final class VehicleRegisterer {
     private VehicleRegisterer() {}
 
@@ -131,15 +113,48 @@ public final class VehicleRegisterer {
         registerFuelTanks();
         registerTrunks();
         registerScreenHandlers();
-        registerScreens();
 
         // Register vehicles
-        registerVehicle(Civic.ENTITY_ID, Civic::new);
-        registerVehicle(Truck.ENTITY_ID, Truck::new);
-        registerVehicle(Tesla.ENTITY_ID, Tesla::new);
-        registerVehicle(Rav4.ENTITY_ID, Rav4::new);
-        registerVehicle(Bugatti.ENTITY_ID, Bugatti::new);
-        registerVehicle(Soul.ENTITY_ID, Soul::new);
+        registerVehicle(
+            Civic.ENTITY_ID,
+            Civic::new,
+            Civic.VEHICLE_HITBOX_WIDTH,
+            Civic.VEHICLE_HITBOX_HEIGHT
+        );
+
+        registerVehicle(
+            Truck.ENTITY_ID,
+            Truck::new,
+            Truck.VEHICLE_HITBOX_WIDTH,
+            Truck.VEHICLE_HITBOX_HEIGHT
+        );
+
+        registerVehicle(
+            Tesla.ENTITY_ID,
+            Tesla::new,
+            Tesla.VEHICLE_HITBOX_WIDTH,
+            Tesla.VEHICLE_HITBOX_HEIGHT
+        );
+
+        registerVehicle(
+            Rav4.ENTITY_ID,
+            Rav4::new,
+            Rav4.VEHICLE_HITBOX_WIDTH,
+            Rav4.VEHICLE_HITBOX_HEIGHT
+        );
+
+        registerVehicle(
+            Bugatti.ENTITY_ID,
+            Bugatti::new,
+            Bugatti.VEHICLE_HITBOX_WIDTH,
+            Bugatti.VEHICLE_HITBOX_HEIGHT
+        );
+        registerVehicle(
+            Soul.ENTITY_ID,
+            Soul::new,
+            Soul.VEHICLE_HITBOX_WIDTH,
+            Soul.VEHICLE_HITBOX_HEIGHT
+        );
 
         // Register items
         registerItem(Civic.ITEM_ID, Civic.ENTITY_ID, Civic::new);
@@ -148,53 +163,6 @@ public final class VehicleRegisterer {
         registerItem(Rav4.ITEM_ID, Rav4.ENTITY_ID, Rav4::new);
         registerItem(Bugatti.ITEM_ID, Bugatti.ENTITY_ID, Bugatti::new);
         registerItem(Soul.ITEM_ID, Soul.ENTITY_ID, Soul::new);
-    }
-
-    /**
-     * Registers all that is required on the client, including
-     * renderers and models.
-     */
-    public static void clientRegisterAll() {
-        registerComponentRenderers();
-
-        // Register all vehicle renders
-        registerRenderer(
-            VehicleRegisterer.getVehicleType(Civic.ENTITY_ID),
-            CivicRenderer::new
-
-        );
-        registerRenderer(
-            VehicleRegisterer.getVehicleType(Rav4.ENTITY_ID),
-            Rav4Renderer::new
-        );
-
-        registerRenderer(
-            VehicleRegisterer.getVehicleType(Truck.ENTITY_ID),
-            TruckRenderer::new
-        );
-
-        registerRenderer(
-            VehicleRegisterer.getVehicleType(Tesla.ENTITY_ID),
-            TeslaRenderer::new
-        );
-
-        registerRenderer(
-            VehicleRegisterer.getVehicleType(Bugatti.ENTITY_ID),
-            BugattiRenderer::new
-        );
-
-        registerRenderer(
-            VehicleRegisterer.getVehicleType(Soul.ENTITY_ID),
-            SoulRenderer::new
-        );
-
-        // Register all vehicle models
-        registerModel(CivicModel.CIVIC, CivicModel::getTexturedModelData);
-        registerModel(TruckModel.TRUCK, TruckModel::getTexturedModelData);
-        registerModel(TeslaModel.TESLA, TeslaModel::getTexturedModelData);
-        registerModel(Rav4Model.RAV4, Rav4Model::getTexturedModelData);
-        registerModel(BugattiModel.BUGATTI, BugattiModel::getTexturedModelData);
-        registerModel(SoulModel.SOUL, SoulModel::getTexturedModelData);
     }
 
     /**
@@ -240,7 +208,9 @@ public final class VehicleRegisterer {
      */
     private static <T extends Vehicle> void registerVehicle(
         String ID,
-        EntityType.EntityFactory<T> factory
+        EntityType.EntityFactory<T> factory,
+        float vehicleWidth,
+        float vehicleHeight
     ) {
         VehicleMod.LOGGER.info("Registering {} entity for {}", ID, VehicleMod.MOD_ID);
 
@@ -251,7 +221,7 @@ public final class VehicleRegisterer {
         EntityType<T> vehicleEntityType = EntityType.Builder.create(
             factory,
             SpawnGroup.MISC
-        ).dimensions(4.0f, 4.0f)
+        ).dimensions(vehicleWidth, vehicleHeight)
          .dropsNothing()
          .maxTrackingRange(128)
          .makeFireImmune()
@@ -269,40 +239,6 @@ public final class VehicleRegisterer {
         ENTITY_TYPES.put(ID, vehicleEntityType);
     }
 
-    /**
-     * Registers a renderer for an entity.
-     * @param type The entity type.
-     * @param factory The renderer factory which creates entity renderers.
-     * @param <T> The class of the entity to render.
-     */
-    private static <T extends Entity> void registerRenderer(
-            EntityType<T> type,
-            EntityRendererFactory<T> factory
-    ) {
-        VehicleMod.LOGGER.info(
-            "Registering {} renderer for {}", type.getName(), VehicleMod.MOD_ID
-        );
-
-        // Register the renderer
-        EntityRendererRegistry.register(type, factory);
-    }
-
-    /**
-     * Registers the model of an entity, i.e how it looks.
-     * @param model The model of the entity.
-     * @param provider The provider of the model data.
-     */
-    private static void registerModel(
-        EntityModelLayer model,
-        EntityModelLayerRegistry.TexturedModelDataProvider provider
-    ) {
-        VehicleMod.LOGGER.info(
-            "Registering {} model for {}", model.name(), VehicleMod.MOD_ID
-        );
-
-        EntityModelLayerRegistry.registerModelLayer(model, provider);
-    }
-
     /** Registers vehicle seat entity. */
     private static void registerSeat() {
         Registry.register(Registries.ENTITY_TYPE, SEAT_IDENTIFIER, SEAT_ENTITY_TYPE);
@@ -318,24 +254,6 @@ public final class VehicleRegisterer {
         Registry.register(Registries.ENTITY_TYPE, TRUNK_IDENTIFIER, TRUNK_ENTITY_TYPE);
     }
 
-    /** Registers renders of all vehicle components. They don't render, so they all use NoOpRenderer. */
-    private static void registerComponentRenderers() {
-        registerRenderer(
-            SEAT_ENTITY_TYPE,
-            NoOpRenderer<Seat>::new
-        );
-
-        registerRenderer(
-            FUEL_TANK_ENTITY_TYPE,
-            NoOpRenderer<FuelTank>::new
-        );
-
-        registerRenderer(
-            TRUNK_ENTITY_TYPE,
-            NoOpRenderer<Trunk>::new
-        );
-    }
-
     /** Registers fuel tank and trunk screen handlers. */
     private static void registerScreenHandlers() {
         Registry.register(
@@ -348,19 +266,6 @@ public final class VehicleRegisterer {
             Registries.SCREEN_HANDLER,
             Trunk.ENTITY_ID,
             TRUNK_SCREEN_HANDLER_TYPE
-        );
-    }
-
-    /** Registers fuel tank and trunk screens */
-    private static void registerScreens() {
-        HandledScreens.register(
-            FUEL_TANK_SCREEN_HANDLER_TYPE,
-            FuelTankInventoryScreen::new
-        );
-
-        HandledScreens.register(
-            TRUNK_SCREEN_HANDLER_TYPE,
-            TrunkInventoryScreen::new
         );
     }
 

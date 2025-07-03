@@ -1,7 +1,8 @@
-package net.ultra.vehiclemod.vehicles;
+package net.ultra.vehiclemod.vehicles.render;
 
 import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.client.render.entity.EntityRendererFactory;
+import net.ultra.vehiclemod.vehicles.Vehicle;
 
 /**
  * The vehicle renderer renders the vehicle in the world

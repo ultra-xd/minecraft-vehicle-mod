@@ -1,4 +1,4 @@
-package net.ultra.vehiclemod.vehicles;
+package net.ultra.vehiclemod.vehicles.render;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;

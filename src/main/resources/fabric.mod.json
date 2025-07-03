@@ -17,13 +17,13 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"net.ultra.vehiclemod.VehicleMod"
+          "net.ultra.vehiclemod.core.VehicleMod"
 		],
 		"fabric-datagen": [
-			"net.ultra.vehiclemod.VehicleModDataGenerator"
+			"net.ultra.vehiclemod.core.VehicleModDataGenerator"
 		],
 		"client": [
-			"net.ultra.vehiclemod.VehicleModClient"
+			"net.ultra.vehiclemod.core.VehicleModClient"
 		]
 	},
 	"mixins": [
