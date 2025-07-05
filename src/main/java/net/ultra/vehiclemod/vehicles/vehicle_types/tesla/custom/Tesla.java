@@ -51,4 +51,9 @@ public class Tesla extends Vehicle {
     protected float getExplosionLookForwardDistance() {
         return 1.2f;
     }
+
+    @Override
+    public boolean emitsSmokeParticles() {
+        return false;
+    }
 }

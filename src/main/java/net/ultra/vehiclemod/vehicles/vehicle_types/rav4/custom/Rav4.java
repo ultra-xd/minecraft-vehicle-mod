@@ -51,4 +51,10 @@ public class Rav4 extends Vehicle {
     protected float getExplosionLookForwardDistance() {
         return 1.2f;
     }
+
+    @Override
+    public boolean emitsSmokeParticles() {
+        Item firstFuel = tank.getFirstFuel();
+        return firstFuel != null && firstFuel == Items.COAL;
+    }
 }

@@ -14,6 +14,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryEntryLookup;
@@ -201,6 +202,19 @@ public class FuelTank extends VehicleInventory {
         return null;
     }
 
+    public Item getFirstFuel() {
+        for (int i = 0; i < getInventorySize(); i++) {
+            ItemStack itemStack = getStack(i);
+            if (!itemStack.isEmpty()) {
+                Item item = itemStack.getItem();
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    /** Drops one unit of fuel from the fuel tank. */
     public void dropFuel() {
         World world = getWorld();
         Item item = consumeFuel();

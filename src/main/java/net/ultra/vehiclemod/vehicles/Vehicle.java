@@ -1,5 +1,6 @@
 package net.ultra.vehiclemod.vehicles;
 
+import com.mojang.serialization.Codec;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -8,7 +9,7 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.storage.ReadView;
@@ -64,7 +65,8 @@ public abstract class Vehicle extends Entity {
 
     // Fuel properties
     protected final double FUEL_CONSUMPTION_RATE; // how much ticks it requires to consume one fuel
-    protected double fuelTicks = 0;
+    protected int fuelTicks = 0;
+    protected int fuelParticleTicks = 0;
 
     protected static final float DAMAGE_RATE = 1.0f; // damage / speed
 
@@ -153,7 +155,7 @@ public abstract class Vehicle extends Entity {
     /**
      * Reloads all child components from NBT data.
      * Minecraft does not save which entities are the vehicle's components,
-     * so NBT data and UUIDs are required to reconnect these entities upon reloading
+     * so save data and UUIDs are required to reconnect these entities upon reloading
      * the world.
      * @param readView The NBT data.
      */
@@ -165,19 +167,25 @@ public abstract class Vehicle extends Entity {
         SEATS.clear();
 
         // Find all seats
-        int i = 0;
-        while (true) {
-            // Add seat NBT to ArrayList of UUIDs
-            Optional<Long> most = readView.getOptionalLong("seatMost" + i);
-            Optional<Long> least = readView.getOptionalLong("seatLeast" + i);
+        ReadView.TypedListReadView<Long> seatMostSavedList = readView.getTypedListView("seatMost", Codec.LONG);
+        ReadView.TypedListReadView<Long> seatLeastSavedList = readView.getTypedListView("seatLeast", Codec.LONG);
 
-            if (most.isPresent() && least.isPresent()) {
-                SEATS_UUID.add(new UUID(most.get(), least.get()));
-                SEATS.add(null);
-            } else break;
+        ArrayList<Long> seatMostList = new ArrayList<>();
+        ArrayList<Long> seatLeastList = new ArrayList<>();
 
-            i++;
+        for (long mostUuid: seatMostSavedList) seatMostList.add(mostUuid);
+        for (long leastUuid: seatLeastSavedList) seatLeastList.add(leastUuid);
 
+        assert seatMostList.size() == seatLeastList.size();
+
+        int size = seatMostList.size();
+
+        for (int i = 0; i < size; i++) {
+            long most = seatMostList.get(i);
+            long least = seatLeastList.get(i);
+
+            SEATS_UUID.add(new UUID(most, least));
+            SEATS.add(null);
         }
 
         // Add fuel tank UUID
@@ -187,7 +195,6 @@ public abstract class Vehicle extends Entity {
         if (fuelTankMost.isPresent() && fuelTankLeast.isPresent()) {
             tankUuid = new UUID(fuelTankMost.get(), fuelTankLeast.get());
         }
-
 
         // Add trunk UUID
         Optional<Long> trunkMost = readView.getOptionalLong("trunkMost");
@@ -208,13 +215,15 @@ public abstract class Vehicle extends Entity {
     @Override
     protected void writeCustomData(WriteView writeView) {
         // Get UUID of all seats and write to NBT
-        for (int i = 0; i < SEATS.size(); i++) {
-            Seat seat = SEATS.get(i);
 
+        WriteView.ListAppender<Long> seatMostList = writeView.getListAppender("seatMost", Codec.LONG);
+        WriteView.ListAppender<Long> seatLeastList = writeView.getListAppender("seatLeast", Codec.LONG);
+
+        for (Seat seat: SEATS) {
             if (seat != null) {
                 UUID uuid = seat.getUuid();
-                writeView.putLong("seatMost" + i, uuid.getMostSignificantBits());
-                writeView.putLong("seatLeast" + i, uuid.getLeastSignificantBits());
+                seatMostList.add(uuid.getMostSignificantBits());
+                seatLeastList.add(uuid.getLeastSignificantBits());
             }
         }
 
@@ -241,67 +250,24 @@ public abstract class Vehicle extends Entity {
 
         super.tick();
 
+        if (age == 1) {
+            // Create new components if no save data
+            if (!fromSavedData) {
+                createSeats();
+                createFuelTank();
+                createTrunk();
+            }
+
+            loadComponents();
+        }
+
         if (!getWorld().isClient) {
-            if (age == 1) {
-                // Create new components if no save data
-                if (!fromSavedData) {
-                    createSeats();
-                    createFuelTank();
-                    createTrunk();
-                }
+            // Load all components on startup
 
-                loadComponents();
-            }
 
-            // Handle dealing damage to living entities
-            List<Entity> collidedEntities = getCollidingLivingEntities();
-            for (Entity entity: collidedEntities) {
-                if (entity instanceof LivingEntity livingEntity) {
-                    // Only damage entity if vehicle is beyond a certain speed
-                    if (Math.abs(speed) > 0.15f) {
-                        // Take damage & knockback proportional to speed
-                        float damage = (float) (DAMAGE_RATE * (Math.abs(speed) * TPS));
-                        Vec3d direction = getVelocity().normalize();
-
-                        /*
-                         * Living entity must take the negative of the velocity since
-                         * the takeKnockback method calculates the direction vector from the entity
-                         * to the damage source, but we want the knockback in the
-                         * direction of the velocity vector.
-                         */
-                        livingEntity.takeKnockback(
-                            Math.abs(speed),
-                            -direction.getX(),
-                            -direction.getZ()
-                        );
-
-                        livingEntity.damage(
-                            (ServerWorld) getWorld(),
-                            getWorld().getDamageSources().outOfWorld(),
-                            damage
-                        );
-                    }
-                }
-            }
-
-            // Handle explosions with other vehicles
-            List<Entity> collidedVehicles = getCollidingVehicles();
-            for (Entity entity: collidedVehicles) {
-                if (entity instanceof Vehicle vehicle) {
-                    // Get speed of vehicles relative to each other
-                    double relativeSpeed = getVelocity().subtract(vehicle.getVelocity()).length();
-
-                    // Explode both if beyond max speed of either
-                    if (
-                        relativeSpeed > MAX_SPEED * EXPLOSION_PROPORTIONALITY ||
-                        relativeSpeed > vehicle.MAX_SPEED * EXPLOSION_PROPORTIONALITY
-                    ) {
-                        explodeProportionalToSpeed();
-                        vehicle.explodeProportionalToSpeed();
-                        return;
-                    }
-                }
-            }
+            // Handle dealing damage to living entities & explosions due to other vehicles
+            manageCollidingLivingEntities(getCollidingLivingEntities());
+            if (manageCollidingVehicles(getCollidingVehicles())) return;
 
             noControl = true;
             // Handle player input & consume fuel if someone is in driver seat
@@ -348,6 +314,10 @@ public abstract class Vehicle extends Entity {
                 getVelocity().getY(),
                 Math.cos(yaw) * speed
             ));
+        }
+
+        if (getWorld().isClient && !getVelocity().equals(Vec3d.ZERO)) {
+            handleFuelParticles();
         }
 
         // Movement must be updated on the server and client
@@ -607,6 +577,31 @@ public abstract class Vehicle extends Entity {
         return false;
     }
 
+    private void handleFuelParticles() {
+        fuelParticleTicks++;
+
+        if (fuelParticleTicks >= getSmokeParticleEmissionRate()) {
+            System.out.println("emitting smoke particle jajaja :)");
+            fuelParticleTicks = 0;
+
+            if (emitsSmokeParticles()) {
+                emitSmokeParticle();
+            }
+        }
+    }
+
+    private void emitSmokeParticle() {
+        getWorld().addParticleClient(
+            ParticleTypes.CAMPFIRE_COSY_SMOKE,
+            getX(),
+            getY() + 0.5d,
+            getZ(),
+            0d,
+            0d,
+            0d
+        );
+    }
+
     /**
      * Determines all living entities colliding with the vehicle.
      * @return List of all entities that are living entities colliding with the entity.
@@ -638,6 +633,70 @@ public abstract class Vehicle extends Entity {
             getBoundingBox(),
             entity -> entity instanceof Vehicle // filter for vehicles
         );
+    }
+
+    /**
+     * Deals knockback and damage to all entities given.
+     * It is assumed all entities provided are collided with the vehicle.
+     * @param entities List of all entities colliding with the vehicle.
+     */
+    private void manageCollidingLivingEntities(List<Entity> entities) {
+        for (Entity entity: entities) {
+            if (entity instanceof LivingEntity livingEntity) {
+                // Only damage entity if vehicle is beyond a certain speed
+                if (Math.abs(speed) > 0.15f) {
+                    // Take damage & knockback proportional to speed
+                    float damage = (float) (DAMAGE_RATE * (Math.abs(speed) * TPS));
+                    Vec3d direction = getVelocity().normalize();
+
+                    /*
+                     * Living entity must take the negative of the velocity since
+                     * the takeKnockback method calculates the direction vector from the entity
+                     * to the damage source, but we want the knockback in the
+                     * direction of the velocity vector.
+                     */
+                    livingEntity.takeKnockback(
+                        Math.abs(speed),
+                        -direction.getX(),
+                        -direction.getZ()
+                    );
+
+                    livingEntity.damage(
+                        (ServerWorld) getWorld(),
+                        getWorld().getDamageSources().outOfWorld(),
+                        damage
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Explodes all vehicles the vehicle collides with.
+     * It is assumed every vehicle provided is already colliding with this vehicle.
+     * @param vehicles The vehicles colliding with this vehicle.
+     * @return True if the vehicle explodes, false otherwise.
+     */
+    private boolean manageCollidingVehicles(List<Entity> vehicles) {
+        boolean hasCollided = false;
+        for (Entity entity: vehicles) {
+            if (entity instanceof Vehicle vehicle) {
+                // Get speed of vehicles relative to each other
+                double relativeSpeed = getVelocity().subtract(vehicle.getVelocity()).length();
+
+                // Explode both if beyond max speed of either
+                if (
+                    relativeSpeed > MAX_SPEED * EXPLOSION_PROPORTIONALITY ||
+                    relativeSpeed > vehicle.MAX_SPEED * EXPLOSION_PROPORTIONALITY
+                ) {
+                    vehicle.explodeProportionalToSpeed();
+                    hasCollided = true;
+                }
+            }
+        }
+
+        if (hasCollided) explodeProportionalToSpeed();
+        return hasCollided;
     }
 
     /**
@@ -679,6 +738,14 @@ public abstract class Vehicle extends Entity {
      */
     public boolean explodesOnLavaContact() {
         return true;
+    }
+
+    public boolean emitsSmokeParticles() {
+        return true;
+    }
+
+    public int getSmokeParticleEmissionRate() {
+        return 1;
     }
 
     /**
